@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - STORAGE_DIR=/app/storage
+      - DOCKER_LATEX_IMAGE=texlive/texlive:latest
+    volumes:
+      - ./backend/storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - latex-compiler
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+
+  latex-compiler:
+    build: ./latex-compiler
+    image: claude-latex-compiler
+    entrypoint: ["echo", "Compiler image built"]
