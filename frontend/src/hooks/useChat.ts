@@ -18,7 +18,7 @@ export function useChat() {
     currentProjectId,
   } = useEditorStore();
 
-  const { sendMessage: wsSend } = useWebSocket();
+  const { sendMessage: wsSend, stopStream } = useWebSocket();
 
   // Load persisted chat history on mount
   useEffect(() => {
@@ -88,5 +88,5 @@ export function useChat() {
     ]
   );
 
-  return { sendMessage };
+  return { sendMessage, stopStream };
 }

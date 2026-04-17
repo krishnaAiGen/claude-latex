@@ -17,7 +17,7 @@ export function useWebSocket() {
     setAgentProcessing,
     appendStreamingContent,
     clearStreamingContent,
-    applyAgentResponse,
+    startReview,
     setCompilationStatus,
   } = useEditorStore();
 
@@ -73,14 +73,15 @@ export function useWebSocket() {
           if (pid) saveChatMessage(pid, "assistant", data.message).catch(console.error);
 
           if (data.latex_content) {
-            // Build proper PDF URL with token for iframe access
-            const pid = useEditorStore.getState().currentProjectId;
-            const fullPdfUrl = data.pdf_url && pid ? getPdfUrl(pid) : null;
-            applyAgentResponse(
-              data.latex_content,
-              data.diff || null,
-              fullPdfUrl
-            );
+            // Check if content actually changed — if not, skip review mode
+            const currentLatex = useEditorStore.getState().latexContent;
+            if (data.latex_content !== currentLatex) {
+              // Enter review mode instead of auto-applying
+              const pid2 = useEditorStore.getState().currentProjectId;
+              const fullPdfUrl = data.pdf_url && pid2 ? getPdfUrl(pid2) : null;
+              startReview(data.latex_content, fullPdfUrl);
+            }
+            setAgentProcessing(false);
           } else {
             setAgentProcessing(false);
             setCompilationStatus("idle");
@@ -114,7 +115,7 @@ export function useWebSocket() {
     setAgentProcessing,
     appendStreamingContent,
     clearStreamingContent,
-    applyAgentResponse,
+    startReview,
     setCompilationStatus,
   ]);
 
@@ -141,6 +142,36 @@ export function useWebSocket() {
     []
   );
 
+  // Stop the current stream by closing and reconnecting the WebSocket.
+  // Since we use streaming with no server-side cancellation handler, closing
+  // the connection is the simplest way to abort the in-flight agent run.
+  const stopStream = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    const store = useEditorStore.getState();
+
+    // Save partial streamed content as a message + persist to DB
+    const partial = store.streamingContent;
+    if (partial) {
+      const msg = partial + "\n\n*(stopped by user)*";
+      store.addMessage({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: msg,
+        timestamp: new Date(),
+      });
+      const pid = store.currentProjectId;
+      if (pid) saveChatMessage(pid, "assistant", msg).catch(console.error);
+    }
+
+    store.setAgentProcessing(false);
+    store.clearStreamingContent();
+    store.setCompilationStatus("idle");
+    setTimeout(() => connect(), 300);
+  }, [connect]);
+
   useEffect(() => {
     connect();
     return () => {
@@ -149,5 +180,5 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return { sendMessage };
+  return { sendMessage, stopStream };
 }

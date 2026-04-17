@@ -50,6 +50,15 @@ interface EditorStore {
   // Diff
   activeDiff: DiffEntry[] | null;
 
+  // Review mode (pending AI changes to accept/reject)
+  reviewMode: boolean;
+  pendingLatex: string | null;   // Full proposed document
+  originalLatex: string | null;  // Doc before AI change (for reject)
+  pendingPdfUrl: string | null;  // PDF URL from agent response
+  startReview: (proposed: string, pdfUrl: string | null) => void;
+  acceptReview: () => void;
+  rejectReview: () => void;
+
   // Model
   selectedModel: string;
   setSelectedModel: (model: string) => void;
@@ -142,6 +151,48 @@ export const useEditorStore = create<EditorStore>((set) => ({
   editorReadOnly: false,
 
   activeDiff: null,
+
+  // Review mode defaults
+  reviewMode: false,
+  pendingLatex: null,
+  originalLatex: null,
+  pendingPdfUrl: null,
+
+  startReview: (proposed, pdfUrl) =>
+    set((state) => ({
+      reviewMode: true,
+      pendingLatex: proposed,
+      originalLatex: state.latexContent,
+      pendingPdfUrl: pdfUrl,
+      editorReadOnly: true,  // lock editor during review
+    })),
+
+  acceptReview: () =>
+    set((state) => ({
+      latexContent: state.pendingLatex || state.latexContent,
+      savedContent: state.pendingLatex || state.latexContent,
+      isDirty: false,
+      pdfUrl: state.pendingPdfUrl,
+      pdfTimestamp: Date.now(),
+      reviewMode: false,
+      pendingLatex: null,
+      originalLatex: null,
+      pendingPdfUrl: null,
+      editorReadOnly: false,
+      isAgentProcessing: false,
+      compilationStatus: state.pendingPdfUrl ? "success" : "idle",
+    })),
+
+  rejectReview: () =>
+    set({
+      reviewMode: false,
+      pendingLatex: null,
+      originalLatex: null,
+      pendingPdfUrl: null,
+      editorReadOnly: false,
+      isAgentProcessing: false,
+      compilationStatus: "idle",
+    }),
 
   selectedModel: "anthropic/claude-sonnet-4.6",
   setSelectedModel: (model) => set({ selectedModel: model }),

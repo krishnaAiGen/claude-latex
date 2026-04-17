@@ -1,10 +1,11 @@
 import json
+import time
 import traceback
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from langchain_core.messages import HumanMessage
 
-from app.agent.graph import agent_graph
+import app.agent.graph as agent_module
 from app.agent.state import AgentState
 from app.services.document_store import read_document
 from app.services.auth import decode_token
@@ -38,8 +39,17 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(default=""), proj
             context = data.get("context", {})
             model = data.get("model")  # user-selected model
 
+            print(f"\n{'='*60}")
+            print(f"[CHAT] User: {user_id[:8]}... | Project: {project_id[:8]}...")
+            print(f"[CHAT] Model: {model or 'default'}")
+            print(f"[CHAT] Instruction: {content[:100]}{'...' if len(content) > 100 else ''}")
+            if context.get("selected_text"):
+                print(f"[CHAT] Selection: {context['selected_text'][:80]}...")
+            print(f"{'='*60}")
+
             # Read current document from S3
             latex_content, _ = read_document(user_id, project_id)
+            print(f"[DOC] Loaded main.tex ({len(latex_content)} chars)")
 
             # Build initial state
             initial_state: AgentState = {
@@ -51,51 +61,59 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(default=""), proj
                 "user_id": user_id,
                 "project_id": project_id,
                 "model": model,
+                "classification": None,
+                "skeleton": None,
+                "ref_map_summary": None,
                 "parsed_intent": None,
                 "modified_latex": None,
+                "raw_patches": None,
                 "diff": None,
                 "compilation_result": None,
                 "response_message": None,
                 "retry_count": 0,
             }
 
+            # Thread ID = user + project for conversation continuity
+            thread_id = f"{user_id}_{project_id}"
+            config = {"configurable": {"thread_id": thread_id}}
+            print(f"[THREAD] {thread_id[:20]}...")
+
             try:
+                graph = agent_module.agent_graph
+                if graph is None:
+                    raise RuntimeError("Agent not initialized yet. Please wait and try again.")
+
                 await ws.send_text(
                     json.dumps({"type": "agent_thinking", "content": "Processing..."})
                 )
 
-                async for event in agent_graph.astream_events(
-                    initial_state, version="v2"
+                # Single run with checkpointer — maintains conversation memory
+                final_state = None
+                async for chunk in graph.astream(
+                    initial_state, config, stream_mode="updates"
                 ):
-                    kind = event.get("event")
+                    # Each chunk is {node_name: state_update}
+                    for node_name, state_update in chunk.items():
+                        print(f"[STREAM] {time.strftime('%H:%M:%S')} | Node: {node_name}")
 
-                    if kind == "on_chat_model_stream":
-                        chunk = event.get("data", {}).get("chunk")
-                        if chunk and hasattr(chunk, "content") and chunk.content:
-                            await ws.send_text(
-                                json.dumps(
-                                    {
-                                        "type": "agent_message_delta",
-                                        "content": chunk.content,
-                                    }
+                        # Send status for key nodes
+                        if node_name in ("compile_pdf", "modify_latex", "parse_instruction"):
+                            try:
+                                await ws.send_text(
+                                    json.dumps({"type": "compile_status", "status": node_name})
                                 )
-                            )
+                            except Exception:
+                                return
 
-                    elif kind == "on_chain_start":
-                        name = event.get("name", "")
-                        if name in (
-                            "compile_pdf",
-                            "modify_latex",
-                            "parse_instruction",
-                        ):
-                            await ws.send_text(
-                                json.dumps(
-                                    {"type": "compile_status", "status": name}
-                                )
-                            )
+                        # Accumulate final state
+                        if final_state is None:
+                            final_state = dict(initial_state)
+                        final_state.update(state_update)
 
-                # Get final state
-                final_state = await agent_graph.ainvoke(initial_state)
+                if final_state is None:
+                    final_state = initial_state
+
+                print(f"[DONE] {time.strftime('%H:%M:%S')}")
 
                 response = {
                     "type": "agent_response",
@@ -109,13 +127,25 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(default=""), proj
                     "compilation": final_state.get("compilation_result"),
                 }
 
-                await ws.send_text(json.dumps(response))
+                try:
+                    await ws.send_text(json.dumps(response))
+                except Exception:
+                    return
 
+            except WebSocketDisconnect:
+                print(f"[WS] Client disconnected during processing")
+                return
             except Exception as e:
                 traceback.print_exc()
-                await ws.send_text(
-                    json.dumps({"type": "error", "message": str(e)})
-                )
+                # Send friendly error to frontend
+                friendly = "Something went wrong. Please try again."
+                print(f"[ERROR] {e}")
+                try:
+                    await ws.send_text(
+                        json.dumps({"type": "error", "message": friendly})
+                    )
+                except Exception:
+                    return
 
     except WebSocketDisconnect:
         pass

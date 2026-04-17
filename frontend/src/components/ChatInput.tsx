@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Code } from "lucide-react";
+import { Send, X, Code, Square } from "lucide-react";
 import { useEditorStore } from "@/store/editorStore";
 
 interface ChatInputProps {
   onSend: (content: string) => void;
+  onStop?: () => void;
 }
 
-export default function ChatInput({ onSend }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedText, selectionRange, isAgentProcessing, setSelectedText } =
@@ -101,14 +102,25 @@ export default function ChatInput({ onSend }: ChatInputProps) {
             color: "var(--text-primary)",
           }}
         />
-        <button
-          onClick={handleSend}
-          disabled={!input.trim() || isAgentProcessing}
-          className="p-2 rounded transition-colors disabled:opacity-30"
-          style={{ backgroundColor: "var(--accent)" }}
-        >
-          <Send size={16} color="white" />
-        </button>
+        {isAgentProcessing && onStop ? (
+          <button
+            onClick={onStop}
+            className="p-2 rounded transition-colors animate-fadeIn"
+            style={{ backgroundColor: "var(--error)" }}
+            title="Stop generating"
+          >
+            <Square size={16} color="white" fill="white" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isAgentProcessing}
+            className="p-2 rounded transition-colors disabled:opacity-30"
+            style={{ backgroundColor: "var(--accent)" }}
+          >
+            <Send size={16} color="white" />
+          </button>
+        )}
       </div>
     </div>
   );

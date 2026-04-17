@@ -13,8 +13,15 @@ class AgentState(TypedDict):
     user_id: str
     project_id: str
     model: str | None
-    parsed_intent: str | None  # "modify", "question", "generate"
+
+    # Stage 1 classification result
+    classification: dict | None  # {actions, confidence, clarification}
+    skeleton: str | None         # document structure summary
+    ref_map_summary: str | None  # reference dependency summary
+
+    # Stage 2 results
     modified_latex: str | None
+    raw_patches: str | None
     diff: list[dict] | None
     compilation_result: dict | None
     response_message: str | None

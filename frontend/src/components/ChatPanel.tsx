@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Bot, Loader2 } from "lucide-react";
+import { Bot } from "lucide-react";
 import { useEditorStore } from "@/store/editorStore";
 import { useChat } from "@/hooks/useChat";
 import ChatMessage from "./ChatMessage";
@@ -9,7 +9,7 @@ import ChatInput from "./ChatInput";
 
 export default function ChatPanel() {
   const { messages, isAgentProcessing, streamingContent } = useEditorStore();
-  const { sendMessage } = useChat();
+  const { sendMessage, stopStream } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
@@ -79,7 +79,7 @@ export default function ChatPanel() {
               >
                 <Bot size={14} color="white" />
               </div>
-              <p className="text-sm whitespace-pre-wrap">{streamingContent}</p>
+              <p className="text-sm whitespace-pre-wrap flex-1">{streamingContent}</p>
             </div>
           </div>
         )}
@@ -102,8 +102,8 @@ export default function ChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <ChatInput onSend={sendMessage} />
+      {/* Input with stop button */}
+      <ChatInput onSend={sendMessage} onStop={stopStream} />
     </div>
   );
 }
