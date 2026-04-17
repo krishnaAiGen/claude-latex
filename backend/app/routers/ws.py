@@ -87,31 +87,54 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(default=""), proj
                     json.dumps({"type": "agent_thinking", "content": "Processing..."})
                 )
 
-                # Single run with checkpointer — maintains conversation memory
+                # Use astream_events for token-level streaming + checkpointer for memory
                 final_state = None
-                async for chunk in graph.astream(
-                    initial_state, config, stream_mode="updates"
+                async for event in graph.astream_events(
+                    initial_state, config, version="v2"
                 ):
-                    # Each chunk is {node_name: state_update}
-                    for node_name, state_update in chunk.items():
-                        print(f"[STREAM] {time.strftime('%H:%M:%S')} | Node: {node_name}")
+                    kind = event.get("event")
 
-                        # Send status for key nodes
-                        if node_name in ("compile_pdf", "modify_latex", "parse_instruction"):
+                    # Stream LLM tokens to frontend in real-time
+                    if kind == "on_chat_model_stream":
+                        chunk = event.get("data", {}).get("chunk")
+                        if chunk and hasattr(chunk, "content") and chunk.content:
                             try:
                                 await ws.send_text(
-                                    json.dumps({"type": "compile_status", "status": node_name})
+                                    json.dumps({
+                                        "type": "agent_message_delta",
+                                        "content": chunk.content,
+                                    })
                                 )
                             except Exception:
                                 return
 
-                        # Accumulate final state
-                        if final_state is None:
-                            final_state = dict(initial_state)
-                        final_state.update(state_update)
+                    # Node start events for status updates
+                    elif kind == "on_chain_start":
+                        name = event.get("name", "")
+                        if name in ("compile_pdf", "modify_latex", "parse_instruction", "analyze_latex", "answer_question"):
+                            print(f"[STREAM] {time.strftime('%H:%M:%S')} | Node: {name}")
+                            try:
+                                await ws.send_text(
+                                    json.dumps({"type": "compile_status", "status": name})
+                                )
+                            except Exception:
+                                return
 
+                    # Capture final state from the last chain end
+                    elif kind == "on_chain_end":
+                        output = event.get("data", {}).get("output")
+                        if isinstance(output, dict) and "response_message" in output:
+                            final_state = output
+                        elif isinstance(output, dict) and "modified_latex" in output:
+                            if final_state is None:
+                                final_state = dict(initial_state)
+                            final_state.update(output)
+
+                # If we didn't capture final state from events, get it from the graph
                 if final_state is None:
-                    final_state = initial_state
+                    # Fallback: get the latest checkpoint state
+                    state_snapshot = await graph.aget_state(config)
+                    final_state = dict(state_snapshot.values) if state_snapshot else initial_state
 
                 print(f"[DONE] {time.strftime('%H:%M:%S')}")
 
