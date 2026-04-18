@@ -24,6 +24,9 @@ backend/credentials.json
 # Storage & Cache
 backend/storage/
 
+# Docs (internal)
+docs/
+
 # OS
 .DS_Store
 

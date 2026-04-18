@@ -58,8 +58,9 @@ def get_cache_dir(user_id: str, project_id: str) -> str:
 
 async def _run_pdflatex(work_dir: str) -> tuple[int, str]:
     """Run pdflatex directly as local subprocess."""
+    import shutil
     abs_dir = os.path.abspath(work_dir)
-    pdflatex_bin = "/Library/TeX/texbin/pdflatex"
+    pdflatex_bin = shutil.which("pdflatex") or "/Library/TeX/texbin/pdflatex"
     proc = await asyncio.create_subprocess_exec(
         pdflatex_bin,
         "-interaction=nonstopmode",
