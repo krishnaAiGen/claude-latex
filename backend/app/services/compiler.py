@@ -60,7 +60,7 @@ async def _run_pdflatex(work_dir: str) -> tuple[int, str]:
     """Run pdflatex directly as local subprocess."""
     import shutil
     abs_dir = os.path.abspath(work_dir)
-    pdflatex_bin = shutil.which("pdflatex") or "/Library/TeX/texbin/pdflatex"
+    pdflatex_bin = shutil.which("pdflatex") or "/usr/bin/pdflatex"
     proc = await asyncio.create_subprocess_exec(
         pdflatex_bin,
         "-interaction=nonstopmode",
@@ -145,7 +145,7 @@ async def compile_latex(user_id: str, project_id: str, latex_content: str | None
             log="pdflatex not found",
             errors=[CompilationError(
                 line=None,
-                message="pdflatex is not installed. Run: brew install --cask mactex-no-gui",
+                message="pdflatex is not installed on the server.",
             )],
         )
     except Exception as e:
