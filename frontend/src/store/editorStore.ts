@@ -201,7 +201,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   fileTree: [],
   activeFilePath: "main.tex",
 
-  theme: (typeof window !== "undefined" && localStorage.getItem("theme") === "light") ? "light" : "dark",
+  theme: (typeof window !== "undefined" && localStorage.getItem("theme") === "dark") ? "dark" : "light",
 
   wsConnected: false,
 
@@ -217,7 +217,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
       const next = state.theme === "dark" ? "light" : "dark";
       if (typeof window !== "undefined") {
         localStorage.setItem("theme", next);
-        document.documentElement.setAttribute("data-theme", next === "light" ? "light" : "");
+        document.documentElement.setAttribute("data-theme", next === "dark" ? "dark" : "");
       }
       return { theme: next };
     }),

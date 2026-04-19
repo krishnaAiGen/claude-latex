@@ -28,23 +28,23 @@ export default function StatusBar() {
         <div
           className="border-t px-4 py-2 max-h-40 overflow-y-auto animate-slideDown"
           style={{
-            backgroundColor: "var(--bg-secondary)",
-            borderColor: "var(--error)",
+            backgroundColor: "var(--bg-2)",
+            borderColor: "var(--err)",
           }}
         >
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-semibold" style={{ color: "var(--error)" }}>
+            <span className="text-xs font-semibold" style={{ color: "var(--err)" }}>
               Compilation Errors
             </span>
             <button
               onClick={copyErrors}
               className="flex items-center gap-1 text-xs px-2 py-0.5 rounded"
               style={{
-                backgroundColor: "var(--bg-tertiary)",
-                color: "var(--text-secondary)",
+                backgroundColor: "var(--bg-3)",
+                color: "var(--ink-3)",
               }}
             >
-              {copied ? <Check size={10} style={{ color: "var(--success)" }} /> : <Copy size={10} />}
+              {copied ? <Check size={10} style={{ color: "var(--ok)" }} /> : <Copy size={10} />}
               {copied ? "Copied" : "Copy All"}
             </button>
           </div>
@@ -53,12 +53,12 @@ export default function StatusBar() {
               key={i}
               className="text-xs font-mono py-0.5 border-b last:border-0"
               style={{
-                color: "var(--text-primary)",
-                borderColor: "var(--border)",
+                color: "var(--ink)",
+                borderColor: "var(--rule)",
               }}
             >
               {err.line && (
-                <span className="font-semibold" style={{ color: "var(--error)" }}>
+                <span className="font-semibold" style={{ color: "var(--err)" }}>
                   Line {err.line}:{" "}
                 </span>
               )}
@@ -72,9 +72,9 @@ export default function StatusBar() {
       <div
         className="flex items-center justify-between px-4 py-1 text-xs border-t"
         style={{
-          backgroundColor: "var(--bg-secondary)",
-          borderColor: "var(--border)",
-          color: "var(--text-secondary)",
+          backgroundColor: "var(--bg-2)",
+          borderColor: "var(--rule)",
+          color: "var(--ink-3)",
         }}
       >
         <div className="flex items-center gap-4">
@@ -88,7 +88,7 @@ export default function StatusBar() {
             )}
             {compilationStatus === "success" && (
               <>
-                <CheckCircle size={12} style={{ color: "var(--success)" }} />
+                <CheckCircle size={12} style={{ color: "var(--ok)" }} />
                 <span>Compiled</span>
               </>
             )}
@@ -96,7 +96,7 @@ export default function StatusBar() {
               <button
                 onClick={() => setExpanded(!expanded)}
                 className="flex items-center gap-1.5"
-                style={{ color: "var(--error)" }}
+                style={{ color: "var(--err)" }}
               >
                 <AlertCircle size={12} />
                 <span>

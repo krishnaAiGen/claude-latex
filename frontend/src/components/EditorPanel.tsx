@@ -101,14 +101,14 @@ export default function EditorPanel() {
       <div
         className="flex items-center justify-between px-3 py-1 text-xs border-b"
         style={{
-          backgroundColor: "var(--bg-tertiary)",
-          borderColor: "var(--border)",
-          color: "var(--text-secondary)",
+          backgroundColor: "var(--bg-3)",
+          borderColor: "var(--rule)",
+          color: "var(--ink-3)",
         }}
       >
         <span>{activeFilePath}</span>
         {isAgentProcessing && (
-          <span className="animate-pulse-subtle" style={{ color: "var(--warning)" }}>
+          <span className="animate-pulse-subtle" style={{ color: "var(--warn)" }}>
             AI editing...
           </span>
         )}

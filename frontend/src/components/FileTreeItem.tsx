@@ -30,8 +30,8 @@ const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".pdf
 function getFileIcon(name: string) {
   const ext = "." + name.split(".").pop()?.toLowerCase();
   if (TEXT_EXTENSIONS.has(ext)) return <FileText size={14} style={{ color: "var(--accent)" }} />;
-  if (IMAGE_EXTENSIONS.has(ext)) return <Image size={14} style={{ color: "var(--success)" }} />;
-  return <File size={14} style={{ color: "var(--text-secondary)" }} />;
+  if (IMAGE_EXTENSIONS.has(ext)) return <Image size={14} style={{ color: "var(--ok)" }} />;
+  return <File size={14} style={{ color: "var(--ink-3)" }} />;
 }
 
 export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileTreeItemProps) {
@@ -93,25 +93,15 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
     <div>
       <div
         onClick={handleClick}
-        className="flex items-center gap-1.5 px-2 py-1 cursor-pointer text-xs group"
-        style={{
-          paddingLeft: `${depth * 16 + 8}px`,
-          backgroundColor: isActive ? "var(--accent)" : "transparent",
-          color: isActive ? "white" : "var(--text-primary)",
-        }}
-        onMouseEnter={(e) => {
-          if (!isActive) (e.currentTarget.style.backgroundColor = "var(--bg-tertiary)");
-        }}
-        onMouseLeave={(e) => {
-          if (!isActive) (e.currentTarget.style.backgroundColor = "transparent");
-        }}
+        className={`tree-row group${isActive ? " active" : ""}`}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {/* Expand/collapse for folders */}
         {node.type === "folder" ? (
           expanded ? (
-            <ChevronDown size={12} style={{ color: "var(--text-secondary)" }} />
+            <ChevronDown size={12} style={{ color: "var(--ink-3)" }} />
           ) : (
-            <ChevronRight size={12} style={{ color: "var(--text-secondary)" }} />
+            <ChevronRight size={12} style={{ color: "var(--ink-3)" }} />
           )
         ) : (
           <span className="w-3" />
@@ -120,9 +110,9 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
         {/* Icon */}
         {node.type === "folder" ? (
           expanded ? (
-            <FolderOpen size={14} style={{ color: "var(--warning)" }} />
+            <FolderOpen size={14} style={{ color: "var(--warn)" }} />
           ) : (
-            <Folder size={14} style={{ color: "var(--warning)" }} />
+            <Folder size={14} style={{ color: "var(--warn)" }} />
           )
         ) : (
           getFileIcon(node.name)
@@ -140,7 +130,7 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
                 handleUploadToFolder();
               }}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity duration-150"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ink-3)" }}
               title={`Upload into ${node.name}`}
             >
               <Upload size={12} />
@@ -152,7 +142,7 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
                 setCreatingFile(true);
               }}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity duration-150"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ink-3)" }}
               title={`New file in ${node.name}`}
             >
               <FilePlus size={12} />
@@ -167,7 +157,7 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
             onDelete(node.path);
           }}
           className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity duration-150"
-          style={{ color: "var(--error)" }}
+          style={{ color: "var(--err)" }}
         >
           <Trash2 size={12} />
         </button>
@@ -194,9 +184,9 @@ export default function FileTreeItem({ node, depth, onDelete, onRefresh }: FileT
                 placeholder="filename.tex"
                 className="w-full px-1.5 py-0.5 text-xs rounded border outline-none"
                 style={{
-                  backgroundColor: "var(--bg-primary)",
+                  backgroundColor: "var(--paper)",
                   borderColor: "var(--accent)",
-                  color: "var(--text-primary)",
+                  color: "var(--ink)",
                 }}
               />
             </div>

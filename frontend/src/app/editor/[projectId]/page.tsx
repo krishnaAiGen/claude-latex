@@ -31,10 +31,10 @@ export default function EditorPage() {
   // Show loader until store is synced with URL param
   if (currentProjectId !== projectId) {
     return (
-      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
         <div className="flex flex-col items-center gap-3 animate-fadeIn">
           <Loader2 size={32} className="animate-spin" style={{ color: "var(--accent)" }} />
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading project...</p>
+          <p className="text-sm" style={{ color: "var(--ink-3)" }}>Loading project...</p>
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function EditorPage() {
 
             <Separator
               className="w-1 transition-colors hover:bg-[var(--accent)]"
-              style={{ backgroundColor: "var(--border)" }}
+              style={{ backgroundColor: "var(--rule)" }}
             />
 
             <Panel defaultSize={35} minSize={20}>
@@ -64,7 +64,7 @@ export default function EditorPage() {
 
             <Separator
               className="w-1 transition-colors hover:bg-[var(--accent)]"
-              style={{ backgroundColor: "var(--border)" }}
+              style={{ backgroundColor: "var(--rule)" }}
             />
 
             <Panel defaultSize={30} minSize={20}>

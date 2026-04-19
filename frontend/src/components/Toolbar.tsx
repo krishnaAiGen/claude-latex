@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Play, Square, Download, FileText, Circle, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown } from "lucide-react";
+import { Play, Download, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/store/editorStore";
 import { useCompilation } from "@/hooks/useCompilation";
@@ -9,14 +9,17 @@ import { getPdfUrl } from "@/lib/api";
 import { AVAILABLE_MODELS } from "@/lib/types";
 
 const TIER_COLORS: Record<string, string> = {
-  Best: "var(--success)",
+  Best: "var(--ok)",
   Medium: "var(--accent)",
-  Lowest: "var(--warning)",
+  Lowest: "var(--warn)",
 };
 
 export default function Toolbar() {
-  const { compilationStatus, isDirty, wsConnected, theme, toggleTheme, toggleSidebar, sidebarOpen, user, logout, currentProjectId, selectedModel, setSelectedModel } =
-    useEditorStore();
+  const {
+    compilationStatus, isDirty, wsConnected, theme, toggleTheme,
+    toggleSidebar, sidebarOpen, user, logout, currentProjectId,
+    selectedModel, setSelectedModel, isAgentProcessing,
+  } = useEditorStore();
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -30,57 +33,65 @@ export default function Toolbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
   const router = useRouter();
   const { compile, stopCompile } = useCompilation();
-
   const isCompiling = compilationStatus === "compiling";
+  const isActive = isCompiling || isAgentProcessing;
 
-  // Apply theme on mount
+  // Apply theme on mount and toggle
   useEffect(() => {
     document.documentElement.setAttribute(
       "data-theme",
-      theme === "light" ? "light" : ""
+      theme === "dark" ? "dark" : ""
     );
   }, [theme]);
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-2 border-b"
-      style={{
-        backgroundColor: "var(--bg-secondary)",
-        borderColor: "var(--border)",
-      }}
+      className="flex items-center justify-between px-3 py-2 border-b relative"
+      style={{ backgroundColor: "var(--bg-2)", borderColor: "var(--rule)" }}
     >
-      <div className="flex items-center gap-3">
+      {/* Prism bar during active work */}
+      {isActive && (
+        <div className="prism-bar absolute bottom-0 left-0 right-0" style={{ borderRadius: 0 }} />
+      )}
+
+      <div className="flex items-center gap-2">
         <button
           onClick={() => router.push("/dashboard")}
-          className="p-1.5 rounded transition-colors"
-          style={{ backgroundColor: "var(--bg-tertiary)" }}
+          className="btn ghost icon"
           title="Back to projects"
         >
-          <LayoutDashboard size={16} style={{ color: "var(--text-primary)" }} />
+          <LayoutDashboard size={16} />
         </button>
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded transition-colors"
+          className="btn icon"
           style={{
-            backgroundColor: sidebarOpen ? "var(--accent)" : "var(--bg-tertiary)",
-            color: sidebarOpen ? "white" : "var(--text-primary)",
+            background: sidebarOpen ? "var(--accent)" : undefined,
+            color: sidebarOpen ? "white" : undefined,
+            borderColor: sidebarOpen ? "var(--accent)" : undefined,
           }}
           title="Toggle file sidebar"
         >
           <PanelLeft size={16} />
         </button>
-        <FileText size={20} style={{ color: "var(--accent)" }} />
-        <h1 className="text-sm font-semibold">Claude LaTeX Editor</h1>
+
+        <div className="w-px h-4 mx-1" style={{ background: "var(--rule)" }} />
+
+        {/* Brand mark */}
+        <div className="mark">
+          <div className="mark-glyph" style={{ width: 22, height: 22, borderRadius: 6, fontSize: 15 }}>
+            <span>C</span>
+          </div>
+          <span style={{ fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--ink-2)" }}>
+            ai<em style={{ fontStyle: "italic", color: "var(--ink-3)" }}>·latex</em>
+          </span>
+        </div>
+
         {isDirty && (
-          <span
-            className="text-xs px-1.5 py-0.5 rounded"
-            style={{
-              backgroundColor: "var(--bg-tertiary)",
-              color: "var(--warning)",
-            }}
-          >
+          <span className="chip" style={{ color: "var(--warn)", borderColor: "color-mix(in oklab, var(--warn) 30%, var(--rule))" }}>
             unsaved
           </span>
         )}
@@ -88,77 +99,65 @@ export default function Toolbar() {
 
       <div className="flex items-center gap-2">
         {/* Connection status */}
-        <div className="flex items-center gap-1.5 mr-4">
-          <Circle
-            size={8}
-            fill={wsConnected ? "var(--success)" : "var(--error)"}
-            stroke="none"
-          />
+        <div className="chip" style={{ gap: 6 }}>
           <span
-            className="text-xs"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            {wsConnected ? "Connected" : "Disconnected"}
-          </span>
+            style={{
+              width: 6, height: 6, borderRadius: "50%", display: "inline-block",
+              background: wsConnected ? "var(--ok)" : "var(--err)",
+              boxShadow: wsConnected ? "0 0 0 2px color-mix(in oklab, var(--ok) 25%, transparent)" : undefined,
+            }}
+          />
+          <span>{wsConnected ? "Connected" : "Disconnected"}</span>
         </div>
 
         {/* Model selector */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border"
-            style={{
-              backgroundColor: "var(--bg-tertiary)",
-              borderColor: "var(--border)",
-              color: "var(--text-primary)",
-            }}
+            className="btn sm"
+            style={{ gap: 6 }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: TIER_COLORS[AVAILABLE_MODELS.find(m => m.id === selectedModel)?.tier || "Medium"] }}
             />
             {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name || "Select Model"}
-            <ChevronDown size={12} style={{ color: "var(--text-secondary)" }} />
+            <ChevronDown size={12} style={{ color: "var(--ink-3)" }} />
           </button>
 
           {modelDropdownOpen && (
             <div
-              className="absolute right-0 top-full mt-1 w-72 rounded border shadow-lg z-50 animate-fadeIn"
-              style={{
-                backgroundColor: "var(--bg-secondary)",
-                borderColor: "var(--border)",
-              }}
+              className="card absolute right-0 top-full mt-1 w-72 z-50 animate-fadeIn overflow-hidden"
+              style={{ padding: 0 }}
             >
               {(["Best", "Medium", "Lowest"] as const).map(tier => (
                 <div key={tier}>
                   <div
-                    className="px-3 py-1 text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: TIER_COLORS[tier], backgroundColor: "var(--bg-tertiary)" }}
+                    className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: TIER_COLORS[tier], background: "var(--bg-2)", fontFamily: "var(--font-mono)" }}
                   >
                     {tier}
                   </div>
                   {AVAILABLE_MODELS.filter(m => m.tier === tier).map(model => (
                     <button
                       key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setModelDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-xs"
+                      onClick={() => { setSelectedModel(model.id); setModelDropdownOpen(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs transition-colors"
                       style={{
-                        backgroundColor: selectedModel === model.id ? "var(--accent)" : "transparent",
-                        color: selectedModel === model.id ? "white" : "var(--text-primary)",
+                        background: selectedModel === model.id ? "color-mix(in oklab, var(--accent) 12%, transparent)" : "transparent",
+                        color: "var(--ink)",
+                        borderLeft: selectedModel === model.id ? "2px solid var(--accent)" : "2px solid transparent",
                       }}
                       onMouseEnter={e => {
-                        if (selectedModel !== model.id) e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+                        if (selectedModel !== model.id) e.currentTarget.style.background = "color-mix(in oklab, var(--ink) 5%, transparent)";
                       }}
                       onMouseLeave={e => {
-                        if (selectedModel !== model.id) e.currentTarget.style.backgroundColor = "transparent";
+                        if (selectedModel !== model.id) e.currentTarget.style.background = "transparent";
                       }}
                     >
                       <span>{model.name}</span>
-                      <span style={{ color: selectedModel === model.id ? "rgba(255,255,255,0.7)" : "var(--text-secondary)" }}>
-                        {model.inputPrice}/{model.outputPrice} per 1M
+                      <span style={{ color: "var(--ink-4)", fontFamily: "var(--font-mono)" }}>
+                        {model.inputPrice}/{model.outputPrice}
                       </span>
                     </button>
                   ))}
@@ -171,40 +170,25 @@ export default function Toolbar() {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="p-1.5 rounded transition-colors"
-          style={{ backgroundColor: "var(--bg-tertiary)" }}
+          className="btn ghost icon"
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           {theme === "dark" ? (
-            <Sun size={16} style={{ color: "var(--warning)" }} />
+            <Sun size={15} style={{ color: "var(--warn)" }} />
           ) : (
-            <Moon size={16} style={{ color: "var(--text-primary)" }} />
+            <Moon size={15} style={{ color: "var(--ink-3)" }} />
           )}
         </button>
 
-        {/* Compile / Stop button */}
+        {/* Compile / Stop */}
         {isCompiling ? (
-          <button
-            onClick={stopCompile}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors"
-            style={{
-              backgroundColor: "var(--error)",
-              color: "white",
-            }}
-          >
-            <Loader2 size={14} className="animate-spin" />
+          <button onClick={stopCompile} className="btn sm" style={{ background: "var(--err)", color: "white", borderColor: "var(--err)" }}>
+            <Loader2 size={13} className="animate-spin" />
             Stop
           </button>
         ) : (
-          <button
-            onClick={compile}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "white",
-            }}
-          >
-            <Play size={14} />
+          <button onClick={compile} className="btn accent sm">
+            <Play size={13} />
             Compile
           </button>
         )}
@@ -213,32 +197,24 @@ export default function Toolbar() {
           href={currentProjectId ? getPdfUrl(currentProjectId) : "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors"
-          style={{
-            backgroundColor: "var(--bg-tertiary)",
-            color: "var(--text-primary)",
-          }}
+          className="btn ghost sm"
         >
-          <Download size={14} />
+          <Download size={13} />
           PDF
         </a>
 
         {/* User info + logout */}
         {user && (
           <>
-            <span className="text-xs ml-2" style={{ color: "var(--text-secondary)" }}>
+            <span className="text-xs" style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {user.email}
             </span>
             <button
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-              className="p-1.5 rounded transition-colors"
-              style={{ backgroundColor: "var(--bg-tertiary)" }}
+              onClick={() => { logout(); router.push("/login"); }}
+              className="btn ghost icon"
               title="Sign out"
             >
-              <LogOut size={14} style={{ color: "var(--text-secondary)" }} />
+              <LogOut size={14} style={{ color: "var(--ink-3)" }} />
             </button>
           </>
         )}

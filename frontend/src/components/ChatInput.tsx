@@ -53,8 +53,8 @@ export default function ChatInput({ onSend, onStop }: ChatInputProps) {
     <div
       className="border-t p-3"
       style={{
-        backgroundColor: "var(--bg-secondary)",
-        borderColor: "var(--border)",
+        backgroundColor: "var(--bg-2)",
+        borderColor: "var(--rule)",
       }}
     >
       {/* Show selected text indicator */}
@@ -62,7 +62,7 @@ export default function ChatInput({ onSend, onStop }: ChatInputProps) {
         <div
           className="flex items-center justify-between mb-2 p-2 rounded text-xs border"
           style={{
-            backgroundColor: "var(--bg-tertiary)",
+            backgroundColor: "var(--bg-3)",
             borderColor: "var(--accent)",
           }}
         >
@@ -77,7 +77,7 @@ export default function ChatInput({ onSend, onStop }: ChatInputProps) {
             onClick={() => setSelectedText(null, null)}
             className="hover:opacity-80"
           >
-            <X size={12} style={{ color: "var(--text-secondary)" }} />
+            <X size={12} style={{ color: "var(--ink-3)" }} />
           </button>
         </div>
       )}
@@ -95,30 +95,26 @@ export default function ChatInput({ onSend, onStop }: ChatInputProps) {
           }
           disabled={isAgentProcessing}
           rows={1}
-          className="flex-1 resize-none rounded px-3 py-2 text-sm outline-none border disabled:opacity-50"
-          style={{
-            backgroundColor: "var(--bg-primary)",
-            borderColor: "var(--border)",
-            color: "var(--text-primary)",
-          }}
+          className="textarea flex-1 resize-none text-sm disabled:opacity-50"
+          style={{ fontSize: 13, minHeight: 36, padding: "8px 12px" }}
         />
         {isAgentProcessing && onStop ? (
           <button
             onClick={onStop}
-            className="p-2 rounded transition-colors animate-fadeIn"
-            style={{ backgroundColor: "var(--error)" }}
+            className="btn icon sm animate-fadeIn"
+            style={{ background: "var(--err)", borderColor: "var(--err)", color: "white" }}
             title="Stop generating"
           >
-            <Square size={16} color="white" fill="white" />
+            <Square size={14} fill="white" />
           </button>
         ) : (
           <button
             onClick={handleSend}
             disabled={!input.trim() || isAgentProcessing}
-            className="p-2 rounded transition-colors disabled:opacity-30"
-            style={{ backgroundColor: "var(--accent)" }}
+            className="btn accent icon sm"
+            title="Send (Enter)"
           >
-            <Send size={16} color="white" />
+            <Send size={14} />
           </button>
         )}
       </div>

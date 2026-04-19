@@ -247,8 +247,8 @@ export default function FileSidebar() {
       style={{
         width: 250,
         minWidth: 250,
-        backgroundColor: "var(--bg-secondary)",
-        borderColor: "var(--border)",
+        backgroundColor: "var(--bg-2)",
+        borderColor: "var(--rule)",
       }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
@@ -257,9 +257,9 @@ export default function FileSidebar() {
       <div
         className="flex items-center justify-between px-3 py-1.5 text-xs border-b"
         style={{
-          backgroundColor: "var(--bg-tertiary)",
-          borderColor: "var(--border)",
-          color: "var(--text-secondary)",
+          backgroundColor: "var(--bg-3)",
+          borderColor: "var(--rule)",
+          color: "var(--ink-3)",
         }}
       >
         <span className="font-semibold uppercase tracking-wider">Files</span>
@@ -308,12 +308,12 @@ export default function FileSidebar() {
       {upload && (
         <div
           className="px-3 py-2 border-b"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: "var(--rule)" }}
         >
           {upload.done ? (
             <div className="flex items-center gap-2">
-              <CheckCircle size={14} style={{ color: "var(--success)" }} />
-              <span className="text-xs" style={{ color: "var(--success)" }}>
+              <CheckCircle size={14} style={{ color: "var(--ok)" }} />
+              <span className="text-xs" style={{ color: "var(--ok)" }}>
                 {upload.total} file{upload.total !== 1 ? "s" : ""} uploaded
               </span>
             </div>
@@ -322,13 +322,13 @@ export default function FileSidebar() {
               <div className="flex items-center justify-between mb-1">
                 <span
                   className="text-xs truncate flex-1"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--ink-3)" }}
                 >
                   {upload.currentFile}
                 </span>
                 <span
                   className="text-xs ml-2"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--ink-3)" }}
                 >
                   {upload.completed}/{upload.total}
                 </span>
@@ -336,7 +336,7 @@ export default function FileSidebar() {
               {/* Progress track */}
               <div
                 className="h-1.5 rounded-full overflow-hidden"
-                style={{ backgroundColor: "var(--bg-primary)" }}
+                style={{ backgroundColor: "var(--paper)" }}
               >
                 <div
                   className="h-full rounded-full"
@@ -364,7 +364,7 @@ export default function FileSidebar() {
 
       {/* New file/folder input */}
       {creating && (
-        <div className="px-2 py-1.5 border-b" style={{ borderColor: "var(--border)" }}>
+        <div className="px-2 py-1.5 border-b" style={{ borderColor: "var(--rule)" }}>
           <input
             ref={inputRef}
             value={newName}
@@ -380,9 +380,9 @@ export default function FileSidebar() {
             placeholder={creating === "folder" ? "Folder name..." : "File name..."}
             className="w-full px-2 py-1 text-xs rounded border outline-none"
             style={{
-              backgroundColor: "var(--bg-primary)",
+              backgroundColor: "var(--paper)",
               borderColor: "var(--accent)",
-              color: "var(--text-primary)",
+              color: "var(--ink)",
             }}
           />
         </div>
@@ -393,7 +393,7 @@ export default function FileSidebar() {
         {fileTree.length === 0 && (
           <p
             className="text-xs text-center py-4 px-2"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ink-3)" }}
           >
             No files yet. Create or upload files to get started.
           </p>
@@ -413,8 +413,8 @@ export default function FileSidebar() {
       <div
         className="px-3 py-2 text-center text-xs border-t"
         style={{
-          borderColor: "var(--border)",
-          color: "var(--text-secondary)",
+          borderColor: "var(--rule)",
+          color: "var(--ink-3)",
         }}
       >
         Drag &amp; drop files or folders here

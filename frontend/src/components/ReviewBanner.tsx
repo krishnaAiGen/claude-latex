@@ -49,14 +49,14 @@ export default function ReviewBanner() {
     <div
       className="flex items-center justify-between px-4 py-2 border-b animate-fadeIn"
       style={{
-        backgroundColor: "var(--bg-tertiary)",
+        backgroundColor: "var(--bg-3)",
         borderColor: "var(--accent)",
         borderBottomWidth: "2px",
       }}
     >
       <div className="flex items-center gap-2">
         <Sparkles size={16} style={{ color: "var(--accent)" }} />
-        <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+        <span className="text-sm font-medium" style={{ color: "var(--ink)" }}>
           AI suggested changes
         </span>
         <span
@@ -68,7 +68,7 @@ export default function ReviewBanner() {
         >
           ~{changedCount} line{changedCount !== 1 ? "s" : ""}
         </span>
-        <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+        <span className="text-xs" style={{ color: "var(--ink-3)" }}>
           Review below • You can edit before accepting
         </span>
       </div>
@@ -78,9 +78,9 @@ export default function ReviewBanner() {
           onClick={rejectReview}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors"
           style={{
-            backgroundColor: "var(--bg-primary)",
-            color: "var(--text-primary)",
-            border: "1px solid var(--border)",
+            backgroundColor: "var(--paper)",
+            color: "var(--ink)",
+            border: "1px solid var(--rule)",
           }}
         >
           <X size={14} />
@@ -90,7 +90,7 @@ export default function ReviewBanner() {
           onClick={handleAccept}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium"
           style={{
-            backgroundColor: "var(--success)",
+            backgroundColor: "var(--ok)",
             color: "white",
           }}
         >

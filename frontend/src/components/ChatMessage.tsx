@@ -74,15 +74,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     <div
       className="px-4 py-3 border-b animate-fadeIn"
       style={{
-        backgroundColor: isUser ? "var(--bg-primary)" : "var(--bg-secondary)",
-        borderColor: "var(--border)",
+        backgroundColor: isUser ? "transparent" : "color-mix(in oklab, var(--accent) 5%, transparent)",
+        borderColor: "var(--rule)",
       }}
     >
       <div className="flex items-start gap-3">
         <div
           className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5"
           style={{
-            backgroundColor: isUser ? "var(--accent)" : "var(--success)",
+            background: isUser
+            ? "var(--accent)"
+            : "conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent))",
           }}
         >
           {isUser ? (
@@ -98,13 +100,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             <div
               className="mb-2 p-2 rounded text-xs font-mono border"
               style={{
-                backgroundColor: "var(--bg-tertiary)",
-                borderColor: "var(--border)",
+                backgroundColor: "var(--bg-3)",
+                borderColor: "var(--rule)",
               }}
             >
               <div
                 className="flex items-center gap-1 mb-1"
-                style={{ color: "var(--text-secondary)" }}
+                style={{ color: "var(--ink-3)" }}
               >
                 <Code size={10} />
                 <span>
@@ -126,12 +128,12 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               rehypePlugins={[rehypeKatex]}
               components={{
                 h1: ({ children }) => (
-                  <h1 className="text-base font-bold mt-3 mb-2 pb-1 border-b" style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}>
+                  <h1 className="text-base font-bold mt-3 mb-2 pb-1 border-b" style={{ borderColor: "var(--rule)", color: "var(--ink)" }}>
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="text-sm font-bold mt-3 mb-1.5" style={{ color: "var(--text-primary)" }}>
+                  <h2 className="text-sm font-bold mt-3 mb-1.5" style={{ color: "var(--ink)" }}>
                     {children}
                   </h2>
                 ),
@@ -141,7 +143,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   </h3>
                 ),
                 p: ({ children }) => (
-                  <p className="mb-2 leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                  <p className="mb-2 leading-relaxed" style={{ color: "var(--ink)" }}>
                     {children}
                   </p>
                 ),
@@ -152,17 +154,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   <ol className="list-decimal ml-5 mb-2 space-y-0.5">{children}</ol>
                 ),
                 li: ({ children }) => (
-                  <li className="leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                  <li className="leading-relaxed" style={{ color: "var(--ink)" }}>
                     {children}
                   </li>
                 ),
                 strong: ({ children }) => (
-                  <strong className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <strong className="font-semibold" style={{ color: "var(--ink)" }}>
                     {children}
                   </strong>
                 ),
                 em: ({ children }) => (
-                  <em className="italic" style={{ color: "var(--text-secondary)" }}>
+                  <em className="italic" style={{ color: "var(--ink-3)" }}>
                     {children}
                   </em>
                 ),
@@ -173,9 +175,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                       <code
                         className="px-1 py-0.5 rounded text-xs font-mono"
                         style={{
-                          backgroundColor: "var(--bg-tertiary)",
+                          backgroundColor: "var(--bg-3)",
                           color: "var(--accent)",
-                          border: "1px solid var(--border)",
+                          border: "1px solid var(--rule)",
                         }}
                         {...props}
                       >
@@ -193,9 +195,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   <pre
                     className="p-3 rounded my-2 overflow-x-auto text-xs font-mono border"
                     style={{
-                      backgroundColor: "var(--bg-tertiary)",
-                      borderColor: "var(--border)",
-                      color: "var(--text-primary)",
+                      backgroundColor: "var(--bg-3)",
+                      borderColor: "var(--rule)",
+                      color: "var(--ink)",
                     }}
                   >
                     {children}
@@ -206,7 +208,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                     className="pl-3 my-2 border-l-2 italic"
                     style={{
                       borderColor: "var(--accent)",
-                      color: "var(--text-secondary)",
+                      color: "var(--ink-3)",
                     }}
                   >
                     {children}
@@ -224,28 +226,28 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   </a>
                 ),
                 hr: () => (
-                  <hr className="my-3" style={{ borderColor: "var(--border)" }} />
+                  <hr className="my-3" style={{ borderColor: "var(--rule)" }} />
                 ),
                 table: ({ children }) => (
                   <div className="my-3 overflow-x-auto">
                     <table
                       className="w-full text-xs border-collapse rounded overflow-hidden"
-                      style={{ border: "1px solid var(--border)" }}
+                      style={{ border: "1px solid var(--rule)" }}
                     >
                       {children}
                     </table>
                   </div>
                 ),
                 thead: ({ children }) => (
-                  <thead style={{ backgroundColor: "var(--bg-tertiary)" }}>{children}</thead>
+                  <thead style={{ backgroundColor: "var(--bg-3)" }}>{children}</thead>
                 ),
                 th: ({ children }) => (
                   <th
                     className="px-3 py-2 text-left font-semibold"
                     style={{
-                      color: "var(--text-primary)",
-                      borderBottom: "1px solid var(--border)",
-                      borderRight: "1px solid var(--border)",
+                      color: "var(--ink)",
+                      borderBottom: "1px solid var(--rule)",
+                      borderRight: "1px solid var(--rule)",
                     }}
                   >
                     {children}
@@ -255,16 +257,16 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   <td
                     className="px-3 py-1.5"
                     style={{
-                      color: "var(--text-primary)",
-                      borderBottom: "1px solid var(--border)",
-                      borderRight: "1px solid var(--border)",
+                      color: "var(--ink)",
+                      borderBottom: "1px solid var(--rule)",
+                      borderRight: "1px solid var(--rule)",
                     }}
                   >
                     {children}
                   </td>
                 ),
                 tr: ({ children }) => (
-                  <tr className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+                  <tr className="hover:bg-[var(--bg-3)]/50 transition-colors">
                     {children}
                   </tr>
                 ),
@@ -276,7 +278,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
           <div
             className="mt-1 text-xs"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ink-3)" }}
           >
             {message.timestamp.toLocaleTimeString()}
           </div>

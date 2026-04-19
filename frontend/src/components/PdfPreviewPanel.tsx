@@ -13,9 +13,9 @@ export default function PdfPreviewPanel() {
       <div
         className="flex items-center justify-between px-3 py-1 text-xs border-b"
         style={{
-          backgroundColor: "var(--bg-tertiary)",
-          borderColor: "var(--border)",
-          color: "var(--text-secondary)",
+          backgroundColor: "var(--bg-3)",
+          borderColor: "var(--rule)",
+          color: "var(--ink-3)",
         }}
       >
         <span>PDF Preview</span>
@@ -29,11 +29,11 @@ export default function PdfPreviewPanel() {
               <div
                 className="animate-spin w-8 h-8 border-2 rounded-full mx-auto mb-2"
                 style={{
-                  borderColor: "var(--border)",
+                  borderColor: "var(--rule)",
                   borderTopColor: "var(--accent)",
                 }}
               />
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              <p className="text-sm" style={{ color: "var(--ink-3)" }}>
                 Compiling...
               </p>
             </div>
@@ -44,7 +44,7 @@ export default function PdfPreviewPanel() {
           <div className="flex items-center justify-center h-full">
             <p
               className="text-sm text-center"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ink-3)" }}
             >
               Click &quot;Compile&quot; to generate PDF
             </p>
