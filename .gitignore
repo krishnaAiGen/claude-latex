@@ -17,6 +17,9 @@ dist/
 backend/.env
 backend/credentials.json
 
+# Migration (contains credentials — delete after use)
+migration/
+
 # IDE
 .vscode/
 .idea/
