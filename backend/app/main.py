@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.config import settings
 from app.routers import document, compile, ws, files, auth, chat, projects
@@ -39,3 +41,13 @@ async def startup():
 
     # Initialize agent with PostgreSQL checkpointer
     await init_agent()
+
+
+@app.get("/health")
+async def health():
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return JSONResponse(status_code=503, content={"status": "error", "database": str(e)})
