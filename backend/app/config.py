@@ -38,7 +38,12 @@ class Settings(BaseSettings):
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123"
 
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "https://claude-latex.vercel.app",
+    ]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
