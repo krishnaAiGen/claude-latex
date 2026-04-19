@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from jose import jwt, JWTError
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,9 +61,33 @@ async def create_user(db: AsyncSession, email: str, password: str, name: str | N
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     user = await get_user_by_email(db, email)
-    if not user or not verify_password(password, user.password):
+    if not user or not user.password:
+        return None
+    if not verify_password(password, user.password):
         return None
     return user
+
+
+async def get_user_by_google_id(db: AsyncSession, google_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.google_id == google_id))
+    return result.scalar_one_or_none()
+
+
+async def create_oauth_user(db: AsyncSession, email: str, name: str | None, google_id: str) -> User:
+    user = User(email=email, password=None, name=name, google_id=google_id, is_admin=False)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+def verify_google_token(credential: str) -> dict:
+    """Verify a Google ID token and return its claims. Raises ValueError on failure."""
+    return id_token.verify_oauth2_token(
+        credential,
+        google_requests.Request(),
+        settings.google_client_id,
+    )
 
 
 async def ensure_admin_exists(db: AsyncSession) -> None:

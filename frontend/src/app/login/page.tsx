@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
-import { loginApi } from "@/lib/api";
+import { loginApi, googleAuthApi } from "@/lib/api";
+import { GoogleLogin } from "@react-oauth/google";
 import { useEditorStore } from "@/store/editorStore";
 
 // ── Demo scenes for AssistantDemo ──────────────────────────────
@@ -190,6 +191,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
   const setAuth = useEditorStore((s) => s.setAuth);
   const theme = useEditorStore((s) => s.theme);
@@ -344,7 +346,33 @@ export default function LoginPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <button type="button" className="btn" style={{ justifyContent: "center" }}>ORCID</button>
-            <button type="button" className="btn" style={{ justifyContent: "center" }}>Google</button>
+            <div style={{ position: "relative" }}>
+              <button type="button" disabled={googleLoading} className="btn"
+                style={{ justifyContent: "center", width: "100%", opacity: googleLoading ? 0.6 : 1 }}>
+                {googleLoading ? <><span className="td" /><span className="td" /><span className="td" /></> : "Google"}
+              </button>
+              <div style={{ position: "absolute", inset: 0, opacity: 0, overflow: "hidden" }}>
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    if (!credentialResponse.credential) return;
+                    setGoogleLoading(true);
+                    setError("");
+                    try {
+                      const data = await googleAuthApi(credentialResponse.credential);
+                      setAuth(data.user, data.token);
+                      router.push("/dashboard");
+                    } catch (err: unknown) {
+                      setError(err instanceof Error ? err.message : "Google sign-in failed");
+                    } finally {
+                      setGoogleLoading(false);
+                    }
+                  }}
+                  onError={() => { setError("Google sign-in failed"); setGoogleLoading(false); }}
+                  useOneTap={false}
+                  width="100%"
+                />
+              </div>
+            </div>
           </div>
 
           <p style={{ color: "var(--ink-4)", fontSize: 11, marginTop: 16, textAlign: "center" }}>

@@ -5,7 +5,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.routers import document, compile, ws, files, auth, chat, projects
-from app.db import init_db, AsyncSessionLocal
+from app.db import init_db, AsyncSessionLocal, run_migrations
 from app.services.auth import ensure_admin_exists
 from app.agent.graph import init_agent
 app = FastAPI(title="Claude LaTeX Backend", version="0.1.0")
@@ -31,6 +31,7 @@ app.include_router(ws.router)
 async def startup():
     # Create database tables
     await init_db()
+    await run_migrations()
 
     # Ensure admin user exists
     async with AsyncSessionLocal() as db:

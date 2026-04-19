@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
 
     # Auth
+    google_client_id: str = ""
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     jwt_expire_hours: int = 72

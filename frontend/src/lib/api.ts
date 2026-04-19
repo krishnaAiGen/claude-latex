@@ -29,6 +29,19 @@ export async function loginApi(email: string, password: string) {
   return res.json();
 }
 
+export async function googleAuthApi(credential: string) {
+  const res = await fetch(`${API_BASE}/api/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Google sign-in failed" }));
+    throw new Error(err.detail || "Google sign-in failed");
+  }
+  return res.json();
+}
+
 export async function fetchMe() {
   const res = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Not authenticated");

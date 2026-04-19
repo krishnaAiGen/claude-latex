@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
+import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -35,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable} h-full`}>
       <body className="h-full overflow-hidden">
-        <AuthGuard>{children}</AuthGuard>
+        <GoogleAuthProvider>
+          <AuthGuard>{children}</AuthGuard>
+        </GoogleAuthProvider>
       </body>
     </html>
   );
