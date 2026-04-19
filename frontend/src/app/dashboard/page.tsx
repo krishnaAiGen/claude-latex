@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, FolderOpen, Loader2, LayoutGrid, List, X, Search, LogOut } from "lucide-react";
+import { Plus, Trash2, FolderOpen, Loader2, LayoutGrid, List, X, Search, LogOut, Sun, Moon } from "lucide-react";
 import { useEditorStore } from "@/store/editorStore";
 import { listProjects, createProject, deleteProject } from "@/lib/api";
 import type { Project } from "@/lib/types";
@@ -204,7 +204,7 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const router = useRouter();
-  const { user, logout } = useEditorStore();
+  const { user, logout, theme, toggleTheme } = useEditorStore();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -379,6 +379,15 @@ export default function DashboardPage() {
               <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: "var(--font-mono)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {user.email}
               </span>
+              <button
+                onClick={toggleTheme}
+                className="btn ghost icon sm"
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark"
+                  ? <Sun size={13} style={{ color: "var(--warn)" }} />
+                  : <Moon size={13} style={{ color: "var(--ink-3)" }} />}
+              </button>
               <button
                 onClick={() => { logout(); router.push("/login"); }}
                 className="btn ghost icon sm"

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Sun, Moon } from "lucide-react";
 import { loginApi } from "@/lib/api";
 import { useEditorStore } from "@/store/editorStore";
 
@@ -191,6 +192,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const setAuth = useEditorStore((s) => s.setAuth);
+  const theme = useEditorStore((s) => s.theme);
+  const toggleTheme = useEditorStore((s) => s.toggleTheme);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -211,7 +214,15 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="page paper-bg" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", minHeight: "100vh" }}>
+    <div className="page paper-bg" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", minHeight: "100vh", position: "relative" }}>
+      <button
+        onClick={toggleTheme}
+        className="btn ghost icon"
+        style={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {theme === "dark" ? <Sun size={15} style={{ color: "var(--warn)" }} /> : <Moon size={15} style={{ color: "var(--ink-3)" }} />}
+      </button>
       {/* LEFT — editorial */}
       <div style={{ position: "relative", padding: "32px 40px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="grid-lines" style={{ position: "absolute", inset: 0, opacity: 0.5, maskImage: "radial-gradient(ellipse at 30% 40%, black, transparent 70%)" }} />
