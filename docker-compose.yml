@@ -3,8 +3,8 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    env_file: ./backend/.env
     environment:
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - STORAGE_DIR=/app/storage
       - DOCKER_LATEX_IMAGE=texlive/texlive:latest
     volumes:
