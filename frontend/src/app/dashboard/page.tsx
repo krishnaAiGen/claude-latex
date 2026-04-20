@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, FolderOpen, Loader2, LayoutGrid, List, X, Search, LogOut, Sun, Moon } from "lucide-react";
 import { useEditorStore } from "@/store/editorStore";
-import { listProjects, createProject, deleteProject } from "@/lib/api";
+import { listSharedProjects, createProject, deleteProject } from "@/lib/api";
 import type { Project } from "@/lib/types";
 
 const MATH_SYMBOLS = ["∫", "Σ", "∇"];
@@ -195,6 +195,7 @@ function ProjectRow({
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [sharedProjects, setSharedProjects] = useState<Project[]>([]);
   const [creating, setCreating] = useState(false);
   const [creatingLoading, setCreatingLoading] = useState(false);
   const [newName, setNewName] = useState("");
@@ -212,8 +213,11 @@ export default function DashboardPage() {
   };
 
   const loadProjects = useCallback(() => {
-    listProjects()
-      .then((data) => setProjects(data.projects))
+    listSharedProjects()
+      .then((data) => {
+        setProjects(data.projects);
+        setSharedProjects(data.shared_projects || []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -621,6 +625,65 @@ export default function DashboardPage() {
                 />
               )
             )}
+          </div>
+        )}
+
+        {/* Shared with me */}
+        {!loading && sharedProjects.length > 0 && (
+          <div style={{ marginTop: 40 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)", marginBottom: 16 }}>
+              Shared with me
+              <span style={{ fontSize: 12, color: "var(--ink-4)", fontFamily: "var(--font-mono)", marginLeft: 8 }}>
+                {sharedProjects.length}
+              </span>
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: view === "grid" ? "repeat(auto-fill, minmax(260px, 1fr))" : "1fr",
+                gap: 12,
+              }}
+            >
+              {sharedProjects.map((project, i) => (
+                view === "grid" ? (
+                  <div key={project.id} style={{ position: "relative" }}>
+                    <ProjectCard
+                      project={project}
+                      index={i}
+                      onOpen={handleOpen}
+                      onDelete={() => {}}
+                      deleting={false}
+                    />
+                    <span
+                      className="chip"
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        left: 10,
+                        fontSize: 9,
+                        fontFamily: "var(--font-mono)",
+                        background: "color-mix(in oklab, var(--accent) 12%, transparent)",
+                        borderColor: "transparent",
+                        color: "var(--accent)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {project.role || "editor"}
+                    </span>
+                  </div>
+                ) : (
+                  <ProjectRow
+                    key={project.id}
+                    project={project}
+                    index={i}
+                    onOpen={handleOpen}
+                    onDelete={() => {}}
+                    deleting={false}
+                  />
+                )
+              ))}
+            </div>
           </div>
         )}
       </main>

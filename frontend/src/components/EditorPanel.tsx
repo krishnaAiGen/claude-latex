@@ -6,6 +6,7 @@ import { useEditorStore } from "@/store/editorStore";
 import { useDocument } from "@/hooks/useDocument";
 import { readFile } from "@/lib/api";
 import ReviewBanner from "./ReviewBanner";
+import SelectionToolbar from "./SelectionToolbar";
 import type { editor } from "monaco-editor";
 
 export default function EditorPanel() {
@@ -19,10 +20,14 @@ export default function EditorPanel() {
     reviewMode,
     originalLatex,
     pendingLatex,
+    comments,
   } = useEditorStore();
   const { handleContentChange } = useDocument();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const decorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null);
+  const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
   const prevFileRef = useRef(activeFilePath);
+  const selectionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load file content when active file changes
   useEffect(() => {
@@ -38,59 +43,112 @@ export default function EditorPanel() {
     }
   }, [activeFilePath, currentProjectId]);
 
-  const handleEditorMount: OnMount = useCallback((editor) => {
-    editorRef.current = editor;
+  // Scroll + flash Monaco when a comment card is clicked
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { line } = (e as CustomEvent).detail as { line: number };
+      const ed = editorRef.current;
+      const mo = monacoRef.current;
+      if (!ed || !mo) return;
+      const model = ed.getModel();
+      if (!model) return;
 
-    // Track selection changes
-    editor.onDidChangeCursorSelection((e) => {
-      const model = editor.getModel();
+      ed.revealLineInCenter(line);
+
+      const temp = ed.createDecorationsCollection([{
+        range: new mo.Range(line, 1, line, model.getLineMaxColumn(line)),
+        options: { className: "comment-highlight-active" },
+      }]);
+      setTimeout(() => temp.clear(), 1200);
+    };
+
+    window.addEventListener("reveal-comment-line", handler);
+    return () => window.removeEventListener("reveal-comment-line", handler);
+  }, []);
+
+  // Apply Monaco comment decorations whenever comments change
+  useEffect(() => {
+    const editorInstance = editorRef.current;
+    const monacoInstance = monacoRef.current;
+    if (!editorInstance || !monacoInstance) return;
+    const model = editorInstance.getModel();
+    if (!model) return;
+
+    const decorations = comments
+      .filter((c) => !c.resolved && c.lineNumber != null)
+      .map((c) => ({
+        range: new monacoInstance.Range(
+          c.lineNumber!,
+          1,
+          c.lineNumber!,
+          model.getLineMaxColumn(c.lineNumber!)
+        ),
+        options: { inlineClassName: "comment-highlight" },
+      }));
+
+    if (!decorationsRef.current) {
+      decorationsRef.current = editorInstance.createDecorationsCollection(decorations);
+    } else {
+      decorationsRef.current.set(decorations);
+    }
+  }, [comments]);
+
+  const handleEditorMount: OnMount = useCallback((editorInstance, monacoInstance) => {
+    editorRef.current = editorInstance;
+    monacoRef.current = monacoInstance;
+
+    // Track selection — debounced so dragging never re-renders EditorPanel
+    editorInstance.onDidChangeCursorSelection((e) => {
+      const model = editorInstance.getModel();
       if (!model) return;
 
       const selection = e.selection;
-      const selectedText = model.getValueInRange(selection);
+      const text = model.getValueInRange(selection);
 
-      if (selectedText) {
-        useEditorStore.getState().setSelectedText(selectedText, {
+      if (selectionDebounceRef.current) clearTimeout(selectionDebounceRef.current);
+
+      if (!text) {
+        useEditorStore.getState().setSelectedText(null, null);
+        return;
+      }
+
+      selectionDebounceRef.current = setTimeout(() => {
+        useEditorStore.getState().setSelectedText(text, {
           startLine: selection.startLineNumber,
           endLine: selection.endLineNumber,
         });
-      } else {
-        useEditorStore.getState().setSelectedText(null, null);
-      }
+      }, 120);
     });
 
     // Add "Ask AI" context menu action
-    editor.addAction({
+    editorInstance.addAction({
       id: "ask-ai",
       label: "Ask AI About Selection",
       contextMenuGroupId: "navigation",
       contextMenuOrder: 0,
       run: () => {
-        const selection = editor.getSelection();
-        if (!selection) return;
-        const model = editor.getModel();
+        const sel = editorInstance.getSelection();
+        if (!sel) return;
+        const model = editorInstance.getModel();
         if (!model) return;
-        const text = model.getValueInRange(selection);
+        const text = model.getValueInRange(sel);
         if (text) {
           useEditorStore.getState().setSelectedText(text, {
-            startLine: selection.startLineNumber,
-            endLine: selection.endLineNumber,
+            startLine: sel.startLineNumber,
+            endLine: sel.endLineNumber,
           });
-          window.dispatchEvent(
-            new CustomEvent("focus-chat", { detail: { text } })
-          );
+          window.dispatchEvent(new CustomEvent("focus-chat", { detail: { text } }));
         }
       },
     });
   }, []);
 
-  // Track edits to pendingLatex in review mode (user can edit the right side)
+  // Track edits to pendingLatex in review mode
   const handleDiffEditorMount = useCallback(
     (diffEditor: editor.IStandaloneDiffEditor) => {
       const modifiedEditor = diffEditor.getModifiedEditor();
       modifiedEditor.onDidChangeModelContent(() => {
-        const newContent = modifiedEditor.getValue();
-        useEditorStore.setState({ pendingLatex: newContent });
+        useEditorStore.setState({ pendingLatex: modifiedEditor.getValue() });
       });
     },
     []
@@ -119,10 +177,9 @@ export default function EditorPanel() {
         )}
       </div>
 
-      {/* Review banner with Accept/Reject */}
       <ReviewBanner />
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         {reviewMode && originalLatex !== null && pendingLatex !== null ? (
           <DiffEditor
             height="100%"
@@ -138,9 +195,9 @@ export default function EditorPanel() {
               wordWrap: "on",
               scrollBeyondLastLine: false,
               automaticLayout: true,
-              renderSideBySide: false,  // inline diff (red/green)
+              renderSideBySide: false,
               originalEditable: false,
-              readOnly: false,  // modified side is editable
+              readOnly: false,
               renderIndicators: true,
               renderOverviewRuler: true,
             }}
@@ -167,6 +224,10 @@ export default function EditorPanel() {
           />
         )}
       </div>
+
+      {/* Selection toolbar lives in its own component with its own store subscription
+          so EditorPanel never re-renders when selectedText changes */}
+      {!reviewMode && <SelectionToolbar />}
     </div>
   );
 }

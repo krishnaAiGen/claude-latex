@@ -243,12 +243,9 @@ export default function FileSidebar() {
 
   return (
     <div
-      className="h-full flex flex-col border-r"
+      className="h-full flex flex-col"
       style={{
-        width: 250,
-        minWidth: 250,
         backgroundColor: "var(--bg-2)",
-        borderColor: "var(--rule)",
       }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}

@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Play, Download, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown } from "lucide-react";
+import { Play, Download, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown, Sparkles, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/store/editorStore";
 import { useCompilation } from "@/hooks/useCompilation";
 import { getPdfUrl } from "@/lib/api";
 import { AVAILABLE_MODELS } from "@/lib/types";
+import DraftStatusChip from "@/components/DraftStatusChip";
+import PresenceStack from "@/components/PresenceStack";
+import PushModal from "@/components/PushModal";
+import ShareModal from "@/components/ShareModal";
 
 const TIER_COLORS: Record<string, string> = {
   Best: "var(--ok)",
@@ -17,8 +21,9 @@ const TIER_COLORS: Record<string, string> = {
 export default function Toolbar() {
   const {
     compilationStatus, isDirty, wsConnected, theme, toggleTheme,
-    toggleSidebar, sidebarOpen, user, logout, currentProjectId,
+    toggleSidebar, sidebarOpen, user, logout, currentProjectId, currentProjectName,
     selectedModel, setSelectedModel, isAgentProcessing,
+    myRole, showPushModal, setShowPushModal, showShareModal, setShowShareModal,
   } = useEditorStore();
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,6 +53,7 @@ export default function Toolbar() {
   }, [theme]);
 
   return (
+    <>
     <div
       className="flex items-center justify-between px-3 py-2 border-b relative"
       style={{ backgroundColor: "var(--bg-2)", borderColor: "var(--rule)" }}
@@ -95,6 +101,13 @@ export default function Toolbar() {
             unsaved
           </span>
         )}
+
+        {currentProjectId && (
+          <DraftStatusChip
+            onPush={() => setShowPushModal(true)}
+            onPull={() => {}}
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -117,10 +130,7 @@ export default function Toolbar() {
             className="btn sm"
             style={{ gap: 6 }}
           >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: TIER_COLORS[AVAILABLE_MODELS.find(m => m.id === selectedModel)?.tier || "Medium"] }}
-            />
+            <Sparkles size={13} style={{ color: "var(--accent)" }} />
             {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name || "Select Model"}
             <ChevronDown size={12} style={{ color: "var(--ink-3)" }} />
           </button>
@@ -142,7 +152,7 @@ export default function Toolbar() {
                     <button
                       key={model.id}
                       onClick={() => { setSelectedModel(model.id); setModelDropdownOpen(false); }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-xs transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors"
                       style={{
                         background: selectedModel === model.id ? "color-mix(in oklab, var(--accent) 12%, transparent)" : "transparent",
                         color: "var(--ink)",
@@ -155,10 +165,22 @@ export default function Toolbar() {
                         if (selectedModel !== model.id) e.currentTarget.style.background = "transparent";
                       }}
                     >
-                      <span>{model.name}</span>
-                      <span style={{ color: "var(--ink-4)", fontFamily: "var(--font-mono)" }}>
-                        {model.inputPrice}/{model.outputPrice}
+                      <span
+                        style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: TIER_COLORS[model.tier],
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1 }}>
+                        <span style={{ fontWeight: 600 }}>{model.name}</span>
+                        <span style={{ fontSize: 10, color: "var(--ink-3)", fontFamily: "var(--font-mono)" }}>
+                          {model.inputPrice} / {model.outputPrice}
+                        </span>
                       </span>
+                      {selectedModel === model.id && (
+                        <Check size={13} style={{ color: "var(--accent)", marginLeft: "auto" }} />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -166,6 +188,11 @@ export default function Toolbar() {
             </div>
           )}
         </div>
+
+        {/* Presence avatars + Invite */}
+        <PresenceStack onInvite={() => setShowShareModal(true)} />
+
+        <div className="w-px h-4" style={{ background: "var(--rule)" }} />
 
         {/* Theme toggle */}
         <button
@@ -220,5 +247,22 @@ export default function Toolbar() {
         )}
       </div>
     </div>
+
+    {/* Modals */}
+    {showPushModal && currentProjectId && (
+      <PushModal
+        projectId={currentProjectId}
+        onClose={() => setShowPushModal(false)}
+        onPushed={() => setShowPushModal(false)}
+      />
+    )}
+    {showShareModal && currentProjectId && (
+      <ShareModal
+        projectId={currentProjectId}
+        projectName={currentProjectName || "this project"}
+        onClose={() => setShowShareModal(false)}
+      />
+    )}
+  </>
   );
 }

@@ -21,6 +21,68 @@ export interface Project {
   description: string | null;
   created_at: string;
   updated_at: string;
+  role?: "owner" | "editor" | "commenter" | "viewer";
+  doc_version?: number;
+}
+
+export interface DocumentDraft {
+  content: string;
+  forked_from_version: number;
+  updated_at: string;
+  main_version: number;
+  main_ahead: boolean;
+}
+
+export interface DocumentVersion {
+  id: string;
+  version_number: number;
+  pushed_by: { id: string; name: string };
+  ai_summary: string;
+  diff_stats: { lines_added: number; lines_removed: number; sections_changed: string[] } | null;
+  created_at: string;
+}
+
+export interface ProjectMember {
+  user_id: string;
+  name: string | null;
+  email: string;
+  role: "owner" | "editor" | "commenter" | "viewer";
+}
+
+export interface ProjectInvitation {
+  id: string;
+  email: string;
+  role: "viewer" | "commenter" | "editor";
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  parentId: string | null;
+  lineNumber: number | null;
+  content: string;
+  resolved: boolean;
+  replies: Comment[];
+  createdAt: string;
+}
+
+export interface PresenceUser {
+  userId: string;
+  name: string;
+  role: string;
+  activity: "idle" | "ai_thinking";
+}
+
+export interface MemberDraft {
+  user_id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  lines_changed: number;
+  updated_at: string;
 }
 
 export interface FileNode {
@@ -81,4 +143,11 @@ export type WSMessage =
   | { type: "agent_message_delta"; content: string }
   | AgentResponse
   | { type: "compile_status"; status: string }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "main_updated"; version_number: number; pushed_by: string; ai_summary: string }
+  | { type: "presence_join"; user_id: string; name: string; role: string }
+  | { type: "presence_leave"; user_id: string }
+  | { type: "ai_thinking"; user_id: string; user_name: string }
+  | { type: "ai_done"; user_id: string }
+  | { type: "comment_added"; comment: Comment }
+  | { type: "comment_resolved"; comment_id: string; resolved: boolean };

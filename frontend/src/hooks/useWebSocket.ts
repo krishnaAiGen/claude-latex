@@ -19,6 +19,12 @@ export function useWebSocket() {
     clearStreamingContent,
     startReview,
     setCompilationStatus,
+    setMainAhead,
+    addPresenceUser,
+    removePresenceUser,
+    updatePresenceActivity,
+    addComment,
+    updateCommentResolved,
   } = useEditorStore();
 
   const connect = useCallback(() => {
@@ -107,6 +113,48 @@ export function useWebSocket() {
           setAgentProcessing(false);
           break;
         }
+
+        case "main_updated":
+          // Main has been pushed — show PullBanner to editors with drafts
+          setMainAhead(true);
+          break;
+
+        case "presence_join":
+          addPresenceUser({
+            userId: data.user_id,
+            name: data.name,
+            role: data.role,
+            activity: "idle",
+          });
+          break;
+
+        case "presence_leave":
+          removePresenceUser(data.user_id);
+          break;
+
+        case "ai_thinking": {
+          const currentUserId = useEditorStore.getState().user?.id;
+          if (data.user_id !== currentUserId) {
+            updatePresenceActivity(data.user_id, "ai_thinking");
+          }
+          break;
+        }
+
+        case "ai_done": {
+          const currentUserId2 = useEditorStore.getState().user?.id;
+          if (data.user_id !== currentUserId2) {
+            updatePresenceActivity(data.user_id, "idle");
+          }
+          break;
+        }
+
+        case "comment_added":
+          addComment(data.comment);
+          break;
+
+        case "comment_resolved":
+          updateCommentResolved(data.comment_id, data.resolved);
+          break;
       }
     };
   }, [
@@ -117,6 +165,12 @@ export function useWebSocket() {
     clearStreamingContent,
     startReview,
     setCompilationStatus,
+    setMainAhead,
+    addPresenceUser,
+    removePresenceUser,
+    updatePresenceActivity,
+    addComment,
+    updateCommentResolved,
   ]);
 
   const sendMessage = useCallback(

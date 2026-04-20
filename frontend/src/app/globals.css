@@ -429,6 +429,30 @@ button:active:not(:disabled) {
 input, textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+/* Monaco comment highlight decorations */
+.comment-highlight-active {
+  background: color-mix(in oklab, #e8b400 45%, transparent) !important;
+  border-bottom: 2px solid #e8b400 !important;
+  border-radius: 2px;
+  outline: 1px solid color-mix(in oklab, #e8b400 60%, transparent);
+}
+[data-theme="dark"] .comment-highlight-active {
+  background: color-mix(in oklab, #d4a017 50%, transparent) !important;
+  border-bottom-color: #d4a017 !important;
+  outline-color: color-mix(in oklab, #d4a017 65%, transparent);
+}
+
+.comment-highlight {
+  background: color-mix(in oklab, #e8b400 22%, transparent) !important;
+  border-bottom: 1.5px solid color-mix(in oklab, #e8b400 70%, transparent) !important;
+  border-radius: 2px;
+  transition: background .18s ease;
+}
+[data-theme="dark"] .comment-highlight {
+  background: color-mix(in oklab, #d4a017 28%, transparent) !important;
+  border-bottom-color: color-mix(in oklab, #d4a017 75%, transparent) !important;
+}
+
 input:focus, textarea:focus {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);

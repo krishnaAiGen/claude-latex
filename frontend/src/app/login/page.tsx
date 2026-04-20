@@ -197,6 +197,19 @@ export default function LoginPage() {
   const theme = useEditorStore((s) => s.theme);
   const toggleTheme = useEditorStore((s) => s.toggleTheme);
 
+  // After auth, check for a pending invitation token saved by /invite page
+  const redirectAfterAuth = useCallback(() => {
+    const pendingInvite = typeof window !== "undefined"
+      ? sessionStorage.getItem("pending_invite")
+      : null;
+    if (pendingInvite) {
+      sessionStorage.removeItem("pending_invite");
+      router.push(`/invite?token=${encodeURIComponent(pendingInvite)}`);
+    } else {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -205,14 +218,14 @@ export default function LoginPage() {
       try {
         const data = await loginApi(email, password);
         setAuth(data.user, data.token);
-        router.push("/dashboard");
+        redirectAfterAuth();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Login failed");
       } finally {
         setLoading(false);
       }
     },
-    [email, password, setAuth, router]
+    [email, password, setAuth, redirectAfterAuth]
   );
 
   return (
@@ -360,7 +373,7 @@ export default function LoginPage() {
                     try {
                       const data = await googleAuthApi(credentialResponse.credential);
                       setAuth(data.user, data.token);
-                      router.push("/dashboard");
+                      redirectAfterAuth();
                     } catch (err: unknown) {
                       setError(err instanceof Error ? err.message : "Google sign-in failed");
                     } finally {

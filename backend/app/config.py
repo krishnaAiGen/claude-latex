@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123"
 
+    # Email / invite
+    resend_api_key: str = ""
+    app_url: str = "http://localhost:3000"
+
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",

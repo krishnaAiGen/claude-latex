@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Boolean, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import String, Boolean, DateTime, Text, ForeignKey, JSON, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -32,6 +32,10 @@ class Project(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Monotonically increasing counter — incremented on each push-to-main
+    doc_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Link-based access control: "none" | "viewer" | "commenter" | "editor"
+    link_access: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
