@@ -1,6 +1,5 @@
 services:
   backend:
-    container_name: claude-latex-backend
     build: ./backend
     ports:
       - "8000:8000"
@@ -8,7 +7,6 @@ services:
     environment:
       - STORAGE_DIR=/app/storage
       - DOCKER_LATEX_IMAGE=texlive/texlive:latest
-      - BACKEND_CONTAINER_NAME=claude-latex-backend
     volumes:
       - ./backend/storage:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock

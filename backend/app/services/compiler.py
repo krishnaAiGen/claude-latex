@@ -57,34 +57,15 @@ def get_cache_dir(user_id: str, project_id: str) -> str:
 
 
 async def _run_pdflatex(work_dir: str) -> tuple[int, str]:
-    """Run pdflatex via docker container (preferred) or local binary (fallback)."""
+    """Run pdflatex directly as local subprocess."""
     abs_dir = os.path.abspath(work_dir)
-    backend_container = os.environ.get("BACKEND_CONTAINER_NAME", "")
-
-    if backend_container:
-        # Delegate to the claude-latex-compiler image via the Docker socket.
-        # --volumes-from gives the compiler container the same /app/storage mount,
-        # so abs_dir paths resolve identically in both containers.
-        cmd = [
-            "docker", "run", "--rm",
-            "--volumes-from", backend_container,
-            "claude-latex-compiler",
-            "-halt-on-error",
-            "-output-directory", abs_dir,
-            os.path.join(abs_dir, "main.tex"),
-        ]
-    else:
-        pdflatex_bin = shutil.which("pdflatex") or "/usr/bin/pdflatex"
-        cmd = [
-            pdflatex_bin,
-            "-interaction=nonstopmode",
-            "-halt-on-error",
-            "-output-directory", abs_dir,
-            os.path.join(abs_dir, "main.tex"),
-        ]
-
+    pdflatex_bin = shutil.which("pdflatex") or "/usr/bin/pdflatex"
     proc = await asyncio.create_subprocess_exec(
-        *cmd,
+        pdflatex_bin,
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-output-directory", abs_dir,
+        os.path.join(abs_dir, "main.tex"),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=abs_dir,
