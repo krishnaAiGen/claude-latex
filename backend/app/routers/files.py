@@ -1,5 +1,7 @@
+import io
 import os
 import shutil
+import zipfile
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from fastapi.responses import Response
@@ -128,9 +130,38 @@ async def upload_files(
     owner_id = await _get_owner_id(db, project_id, user["id"])
     try:
         data = await file.read()
-        path = file_store.save_upload(owner_id, project_id, file.filename or "upload", parent_path, data)
+        filename = file.filename or "upload"
+
+        if filename.lower().endswith(".zip"):
+            paths = []
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                for entry in zf.infolist():
+                    # Skip directory entries and macOS metadata
+                    if entry.filename.endswith("/") or "__MACOSX" in entry.filename:
+                        continue
+                    # Skip hidden files
+                    if os.path.basename(entry.filename).startswith("."):
+                        continue
+                    entry_data = zf.read(entry.filename)
+                    zip_dir = os.path.dirname(entry.filename)
+                    zip_base = os.path.basename(entry.filename)
+                    if parent_path and zip_dir:
+                        entry_parent = f"{parent_path}/{zip_dir}"
+                    elif parent_path:
+                        entry_parent = parent_path
+                    else:
+                        entry_parent = zip_dir
+                    path = file_store.save_upload(owner_id, project_id, zip_base, entry_parent, entry_data)
+                    _sync_to_cache(owner_id, project_id, path, entry_data)
+                    paths.append(path)
+            return {"path": parent_path or "", "extracted": len(paths)}
+
+        path = file_store.save_upload(owner_id, project_id, filename, parent_path, data)
         _sync_to_cache(owner_id, project_id, path, data)
         return {"path": path}
+
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted ZIP file")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

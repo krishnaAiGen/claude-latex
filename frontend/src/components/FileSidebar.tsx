@@ -354,7 +354,7 @@ export default function FileSidebar() {
         ref={uploadRef}
         type="file"
         multiple
-        accept=".tex,.bib,.cls,.sty,.png,.jpg,.jpeg,.gif,.svg,.pdf,.eps,.txt"
+        accept=".tex,.bib,.cls,.sty,.png,.jpg,.jpeg,.gif,.svg,.pdf,.eps,.txt,.zip"
         className="hidden"
         onChange={handleFileUpload}
       />
