@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, MessageSquare, CornerDownRight, Trash2 } from "lucide-react";
+import { Bot, Check, CornerDownRight, MessageSquare, Trash2, Wand2 } from "lucide-react";
 import { useEditorStore } from "@/store/editorStore";
 import { getComments, createComment, resolveComment, deleteComment } from "@/lib/api";
 import type { Comment } from "@/lib/types";
@@ -67,6 +67,43 @@ export default function CommentsPanel({ projectId }: Props) {
     }
   };
 
+  const handleAskAI = (c: Comment) => {
+    const lineInfo = c.lineNumber != null ? ` on line ${c.lineNumber}` : "";
+    window.dispatchEvent(new CustomEvent("comment-ai-action", {
+      detail: {
+        message: `There is a comment${lineInfo} by ${c.userName}: "${c.content}". Can you explain what this means and how to address it?`,
+        commentLine: c.lineNumber ?? undefined,
+        commentText: c.content,
+      },
+    }));
+  };
+
+  const handleFixAI = (c: Comment) => {
+    const lineInfo = c.lineNumber != null ? ` on line ${c.lineNumber}` : "";
+    window.dispatchEvent(new CustomEvent("comment-ai-action", {
+      detail: {
+        message: `Please apply this requested change to the LaTeX${lineInfo}: "${c.content}"`,
+        commentLine: c.lineNumber ?? undefined,
+        commentText: c.content,
+      },
+    }));
+  };
+
+  const handleFixAllAI = () => {
+    const openComments = comments.filter((c) => !c.resolved);
+    if (openComments.length === 0) return;
+    const lines = openComments.map((c, i) => {
+      const loc = c.lineNumber != null ? ` [line ${c.lineNumber}]` : "";
+      return `${i + 1}.${loc} by ${c.userName}: "${c.content}"`;
+    });
+    const message =
+      `Here are all ${openComments.length} open comments on this LaTeX document. ` +
+      `Please apply ALL requested changes in a single pass:\n\n` +
+      lines.join("\n") +
+      `\n\nApply every change to the LaTeX document.`;
+    window.dispatchEvent(new CustomEvent("comment-ai-action", { detail: { message } }));
+  };
+
   const handleReply = async (parentId: string) => {
     const text = (draft[parentId] || "").trim();
     if (!text) return;
@@ -107,6 +144,20 @@ export default function CommentsPanel({ projectId }: Props) {
           {openCount} open · {resolvedCount} resolved
         </div>
       </div>
+
+      {/* Fix all button */}
+      {openCount > 0 && (myRole === "owner" || myRole === "editor") && (
+        <div style={{ padding: "0 10px 6px" }}>
+          <button
+            className="btn sm accent"
+            onClick={handleFixAllAI}
+            style={{ width: "100%", gap: 4, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <Wand2 size={12} />
+            Fix all {openCount} comment{openCount !== 1 ? "s" : ""} with AI
+          </button>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div style={{ padding: "0 10px 10px", display: "flex", gap: 4 }}>
@@ -165,6 +216,8 @@ export default function CommentsPanel({ projectId }: Props) {
             onResolve={handleResolve}
             onReply={() => handleReply(c.id)}
             onDelete={handleDelete}
+            onAskAI={handleAskAI}
+            onFixAI={handleFixAI}
           />
         ))}
       </div>
@@ -181,6 +234,8 @@ function CommentCard({
   onResolve,
   onReply,
   onDelete,
+  onAskAI,
+  onFixAI,
 }: {
   comment: Comment;
   canComment: boolean;
@@ -190,6 +245,8 @@ function CommentCard({
   onResolve: (id: string, resolved: boolean) => void;
   onReply: () => void;
   onDelete: (id: string) => void;
+  onAskAI: (c: Comment) => void;
+  onFixAI: (c: Comment) => void;
 }) {
   const color = nameToColor(comment.userName);
   const initials = (comment.userName || "?").slice(0, 2).toUpperCase();
@@ -240,6 +297,26 @@ function CommentCard({
             {comment.resolved && " · resolved"}
           </div>
         </div>
+        {!comment.resolved && (
+          <>
+            <button
+              className="btn icon ghost sm"
+              onClick={(e) => { e.stopPropagation(); onAskAI(comment); }}
+              title="Ask AI about this comment"
+              style={{ color: "var(--accent)" }}
+            >
+              <Bot size={13} />
+            </button>
+            <button
+              className="btn icon ghost sm"
+              onClick={(e) => { e.stopPropagation(); onFixAI(comment); }}
+              title="Fix with AI"
+              style={{ color: "var(--warn)" }}
+            >
+              <Wand2 size={13} />
+            </button>
+          </>
+        )}
         {currentUserId === comment.userId && (
           <button
             className="btn icon ghost sm"

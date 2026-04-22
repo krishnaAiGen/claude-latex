@@ -19,6 +19,10 @@ class AgentState(TypedDict):
     skeleton: str | None         # document structure summary
     ref_map_summary: str | None  # reference dependency summary
 
+    # Comment-targeted context
+    comment_line: int | None
+    comment_text: str | None
+
     # Stage 2 results
     modified_latex: str | None
     raw_patches: str | None

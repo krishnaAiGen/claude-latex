@@ -112,6 +112,8 @@ async def websocket_endpoint(
                 "user_instruction": content,
                 "selected_text": context.get("selected_text"),
                 "selection_range": context.get("selection_range"),
+                "comment_line": context.get("comment_line"),
+                "comment_text": context.get("comment_text"),
                 "user_id": owner_id,
                 "project_id": project_id,
                 "model": model,

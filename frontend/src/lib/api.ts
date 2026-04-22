@@ -105,6 +105,24 @@ export async function compileDocument(projectId: string, latex_content: string) 
   return res.json();
 }
 
+export async function synctexLookup(
+  projectId: string,
+  page: number,
+  x: number,
+  y: number,
+): Promise<{ line: number; column: number | null }> {
+  const params = new URLSearchParams({
+    page: String(page),
+    x: String(x),
+    y: String(y),
+  });
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/synctex?${params}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("No mapping");
+  return res.json();
+}
+
 export function getPdfUrl(projectId: string): string {
   const token = getToken() || "";
   return `${API_BASE}/api/projects/${projectId}/pdf?token=${encodeURIComponent(token)}`;

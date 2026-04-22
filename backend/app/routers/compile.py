@@ -1,5 +1,10 @@
+import logging
 import os
+import shutil
+import subprocess
 from dataclasses import asdict
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, HTTPException, Depends, Body, Query, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -70,6 +75,58 @@ async def compile_document(
         "errors": [asdict(e) for e in result.errors],
         "warnings": result.warnings,
     }
+
+
+@router.get("/projects/{project_id}/synctex")
+async def synctex_lookup(
+    project_id: str,
+    page: int = Query(...),
+    x: float = Query(...),
+    y: float = Query(...),
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Inverse SyncTeX: map a PDF coordinate (page, x, y in PDF points) to a source line."""
+    owner_id = await _get_owner_id(db, project_id, user["id"])
+    cache_dir = get_cache_dir(owner_id, project_id)
+    pdf_path = os.path.join(cache_dir, "main.pdf")
+    synctex_path = os.path.join(cache_dir, "main.synctex.gz")
+
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="PDF not found. Compile first.")
+    if not os.path.exists(synctex_path):
+        raise HTTPException(status_code=409, detail="Recompile to enable click-to-source navigation.")
+
+    synctex_bin = shutil.which("synctex")
+    if not synctex_bin:
+        logger.error("synctex binary not found in PATH")
+        raise HTTPException(status_code=503, detail="synctex not available on server.")
+
+    try:
+        result = subprocess.run(
+            [synctex_bin, "edit", "-o", f"{page}:{x}:{y}:{pdf_path}"],
+            capture_output=True, text=True, timeout=5,
+        )
+        logger.debug("synctex returncode: %d stdout: %s", result.returncode, result.stdout[:300])
+        result_line = None
+        result_col = None
+        for ln in result.stdout.splitlines():
+            if ln.startswith("Line:"):
+                try:
+                    result_line = int(ln[5:])
+                except ValueError:
+                    pass
+            elif ln.startswith("Column:"):
+                try:
+                    v = int(ln[7:])
+                    result_col = v if v >= 0 else None
+                except ValueError:
+                    pass
+        if result_line is not None:
+            return {"line": result_line, "column": result_col}
+    except Exception as e:
+        logger.error("synctex error: %s", e)
+    raise HTTPException(status_code=404, detail="No source mapping found")
 
 
 @router.get("/projects/{project_id}/pdf")

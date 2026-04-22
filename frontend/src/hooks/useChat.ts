@@ -39,15 +39,21 @@ export function useChat() {
   }, [token, currentProjectId, setMessages]);
 
   const sendMessage = useCallback(
-    (content: string) => {
-      const context = selectedText
-        ? {
-            selected_text: selectedText,
-            selection_range: {
-              start_line: selectionRange?.startLine || 0,
-              end_line: selectionRange?.endLine || 0,
-            },
-          }
+    (
+      content: string,
+      overrideContext?: {
+        selected_text?: string;
+        selection_range?: { start_line: number; end_line: number };
+        comment_line?: number;
+        comment_text?: string;
+      },
+    ) => {
+      const resolvedSelectedText = overrideContext?.selected_text ?? selectedText ?? null;
+      const resolvedRange = overrideContext?.selection_range
+        ?? (selectionRange ? { start_line: selectionRange.startLine, end_line: selectionRange.endLine } : null);
+
+      const context = resolvedSelectedText
+        ? { selected_text: resolvedSelectedText, selection_range: resolvedRange ?? { start_line: 0, end_line: 0 } }
         : undefined;
 
       // Add user message to store
@@ -69,13 +75,10 @@ export function useChat() {
 
       // Send via WebSocket
       wsSend(content, {
-        selected_text: selectedText || undefined,
-        selection_range: selectionRange
-          ? {
-              start_line: selectionRange.startLine,
-              end_line: selectionRange.endLine,
-            }
-          : undefined,
+        selected_text: context?.selected_text || undefined,
+        selection_range: context?.selection_range ?? undefined,
+        comment_line: overrideContext?.comment_line,
+        comment_text: overrideContext?.comment_text,
       });
     },
     [

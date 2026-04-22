@@ -17,6 +17,23 @@ export default function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
+  // Handle AI actions dispatched from comment cards
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { message, commentLine, commentText } = (e as CustomEvent).detail as {
+        message: string;
+        commentLine?: number;
+        commentText?: string;
+      };
+      const overrideContext = commentLine != null
+        ? { comment_line: commentLine, comment_text: commentText }
+        : undefined;
+      sendMessage(message, overrideContext);
+    };
+    window.addEventListener("comment-ai-action", handler);
+    return () => window.removeEventListener("comment-ai-action", handler);
+  }, [sendMessage]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}

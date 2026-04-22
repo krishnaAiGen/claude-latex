@@ -64,6 +64,7 @@ async def _run_pdflatex(work_dir: str) -> tuple[int, str]:
         pdflatex_bin,
         "-interaction=nonstopmode",
         "-halt-on-error",
+        "-synctex=1",
         "-output-directory", abs_dir,
         os.path.join(abs_dir, "main.tex"),
         stdout=asyncio.subprocess.PIPE,

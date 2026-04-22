@@ -14,6 +14,7 @@ from app.config import settings
 async def answer_question(state: AgentState) -> dict:
     """Answer a question about the document without modifying it."""
     from langchain_core.messages import SystemMessage, HumanMessage
+    from app.utils.section_extractor import extract_comment_context
 
     model = state.get("model") or settings.heavy_model
     llm = ChatOpenAI(
@@ -35,13 +36,25 @@ async def answer_question(state: AgentState) -> dict:
             parts.append(f"{role}: {content}")
         conv_ctx = "Recent conversation:\n" + "\n".join(parts) + "\n\n"
 
+    latex = state["latex_content"]
+    annotation = ""
+    if state.get("comment_line"):
+        line_num = state["comment_line"]
+        comment_txt = state.get("comment_text") or ""
+        doc_context, win_start, win_end = extract_comment_context(latex, line_num)
+        annotation = f'Comment on line {line_num}: "{comment_txt}"\n\n'
+        context_note = f"(lines {win_start}–{win_end})"
+    else:
+        doc_context = latex
+        context_note = ""
+
     response = await llm.ainvoke(
         [
             SystemMessage(
                 content="You are a helpful LaTeX expert. Answer the user's question about their document concisely. Use conversation history for context when available."
             ),
             HumanMessage(
-                content=f"{conv_ctx}Document:\n```latex\n{state['latex_content']}\n```\n\n"
+                content=f"{conv_ctx}{annotation}Document {context_note}:\n```latex\n{doc_context}\n```\n\n"
                 f"Question: {state['user_instruction']}"
             ),
         ]

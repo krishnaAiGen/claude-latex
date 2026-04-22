@@ -64,5 +64,25 @@ def extract_full_document(content: str) -> str:
     return _numbered(content.split("\n"))
 
 
+def extract_comment_context(latex: str, line_number: int, padding: int = 20) -> tuple[str, int, int]:
+    """Return (numbered_context, win_start_1indexed, win_end_1indexed).
+    Includes preamble + ±padding lines around line_number (1-indexed)."""
+    lines = latex.split("\n")
+    doc_start = next((i for i, l in enumerate(lines) if "\\begin{document}" in l), -1)
+    preamble_lines = lines[:doc_start + 1] if doc_start >= 0 else []
+
+    win_start = max(0, line_number - 1 - padding)          # 0-indexed
+    win_end   = min(len(lines) - 1, line_number - 1 + padding)
+
+    parts = []
+    if preamble_lines:
+        parts.append(f"% Preamble\n{_numbered(preamble_lines)}")
+    window_numbered = "\n".join(
+        f"{win_start + i + 1:4d} | {l}" for i, l in enumerate(lines[win_start:win_end + 1])
+    )
+    parts.append(f"% Context (lines {win_start + 1}–{win_end + 1})\n{window_numbered}")
+    return "\n\n".join(parts), win_start + 1, win_end + 1
+
+
 def _numbered(lines: list[str]) -> str:
     return "\n".join(f"{i+1:4d} | {line}" for i, line in enumerate(lines))

@@ -46,14 +46,27 @@ export default function EditorPanel() {
   // Scroll + flash Monaco when a comment card is clicked
   useEffect(() => {
     const handler = (e: Event) => {
-      const { line } = (e as CustomEvent).detail as { line: number };
+      const { line, column, word } = (e as CustomEvent).detail as { line: number; column?: number | null; word?: string | null };
       const ed = editorRef.current;
       const mo = monacoRef.current;
       if (!ed || !mo) return;
       const model = ed.getModel();
       if (!model) return;
 
-      ed.revealLineInCenter(line);
+      // Resolve column: use synctex column if valid, else search for word in source line
+      let col: number | null = (column != null && column > 0) ? column : null;
+      if (col == null && word) {
+        const lineText = model.getLineContent(line);
+        const idx = lineText.indexOf(word);
+        if (idx !== -1) col = idx + 1; // Monaco columns are 1-based
+      }
+
+      if (col != null) {
+        ed.setPosition({ lineNumber: line, column: col });
+        ed.revealPositionInCenter({ lineNumber: line, column: col });
+      } else {
+        ed.revealLineInCenter(line);
+      }
 
       const temp = ed.createDecorationsCollection([{
         range: new mo.Range(line, 1, line, model.getLineMaxColumn(line)),

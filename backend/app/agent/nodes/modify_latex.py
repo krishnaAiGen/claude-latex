@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from app.agent.state import AgentState
 from app.config import settings
 from app.services.diff import compute_diff
-from app.utils.section_extractor import extract_sections, extract_full_document
+from app.utils.section_extractor import extract_sections, extract_full_document, extract_comment_context
 
 
 def _get_llm(state: AgentState, max_tokens: int = 4096) -> ChatOpenAI:
@@ -75,7 +75,14 @@ async def modify_latex(state: AgentState) -> dict:
     include_preamble = first_action.get("include_preamble", False)
 
     # Build the document context based on scope
-    if scope == "local" and target_sections:
+    annotation = ""
+    if state.get("comment_line"):
+        line_num = state["comment_line"]
+        comment_txt = state.get("comment_text") or ""
+        doc_context, win_start, win_end = extract_comment_context(latex, line_num)
+        context_note = f"(lines {win_start}–{win_end}, comment targets line {line_num})"
+        annotation = f'Comment on line {line_num}: "{comment_txt}"\n\n'
+    elif scope == "local" and target_sections:
         doc_context = extract_sections(latex, target_sections, include_preamble)
         context_note = f"(showing only relevant sections: {', '.join(target_sections)})"
     else:
@@ -101,7 +108,7 @@ async def modify_latex(state: AgentState) -> dict:
         conversation_context = "Recent conversation:\n" + "\n".join(history_parts) + "\n\n"
         print(f"[MODIFY] Including {len(recent)} messages of conversation context")
 
-    user_msg = f"{conversation_context}Document {context_note}:\n```\n{doc_context}\n```\n\nInstruction: {instruction}"
+    user_msg = f"{conversation_context}{annotation}Document {context_note}:\n```\n{doc_context}\n```\n\nInstruction: {instruction}"
 
     if state.get("selected_text"):
         user_msg += f"\n\nSelected text to modify:\n```latex\n{state['selected_text']}\n```"

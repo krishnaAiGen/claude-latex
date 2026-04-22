@@ -179,6 +179,8 @@ export function useWebSocket() {
       context?: {
         selected_text?: string;
         selection_range?: { start_line: number; end_line: number };
+        comment_line?: number;
+        comment_text?: string;
       }
     ) => {
       if (wsRef.current?.readyState !== WebSocket.OPEN) return;

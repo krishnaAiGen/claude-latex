@@ -50,7 +50,11 @@ async def parse_instruction(state: AgentState) -> dict:
     context_parts = [f"Document structure:\n{skeleton}"]
     if ref_map and ref_map != "No references":
         context_parts.append(f"\n{ref_map}")
-    if state.get("selected_text"):
+    if state.get("comment_line"):
+        context_parts.append(
+            f"\nComment on line {state['comment_line']}: \"{state.get('comment_text', '')}\""
+        )
+    elif state.get("selected_text"):
         context_parts.append(f"\nUser selected text:\n```\n{state['selected_text']}\n```")
 
     user_msg = "\n".join(context_parts) + f"\n\nInstruction: {instruction}"
