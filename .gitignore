@@ -11,6 +11,12 @@ mlenv/
 out/
 dist/
 
+#Logs
+backend/logs/reviews/
+
+#data
+backend/data/
+
 # Environment & Secrets
 .env
 .env.local

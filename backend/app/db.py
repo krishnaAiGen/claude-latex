@@ -123,3 +123,27 @@ async def run_migrations():
         await conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_document_versions_project_version ON document_versions(project_id, version_number)"
         ))
+
+        # Reviews table
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS reviews (
+                id VARCHAR(36) PRIMARY KEY,
+                project_id VARCHAR(36) NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                user_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                venue VARCHAR(100) NOT NULL,
+                topic TEXT NOT NULL,
+                mode VARCHAR(50) NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                progress_pct INTEGER NOT NULL DEFAULT 0,
+                error_message TEXT,
+                findings_json TEXT,
+                scores_json TEXT,
+                meta_json TEXT,
+                benchmarks_json TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMPTZ
+            )
+        """))
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_reviews_project_id ON reviews(project_id)"
+        ))

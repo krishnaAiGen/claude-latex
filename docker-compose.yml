@@ -1,4 +1,9 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
   backend:
     build: ./backend
     ports:
@@ -7,11 +12,13 @@ services:
     environment:
       - STORAGE_DIR=/app/storage
       - DOCKER_LATEX_IMAGE=texlive/texlive:latest
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./backend/storage:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - latex-compiler
+      - redis
 
   frontend:
     build:

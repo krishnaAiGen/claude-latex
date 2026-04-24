@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123"
 
+    # Redis / Celery
+    redis_url: str = "redis://localhost:6379/0"
+
+    # Review pipeline
+    review_model: str = "anthropic/claude-sonnet-4-6"
+    review_log: bool = False  # Set REVIEW_LOG=true in .env to enable per-review log files
+    semantic_scholar_api_key: str = ""  # Optional: get free key from semanticscholar.org/product/api
+
     # Email / invite
     resend_api_key: str = ""
     app_url: str = "http://localhost:3000"

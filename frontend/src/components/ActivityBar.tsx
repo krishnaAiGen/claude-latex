@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Folder, MessageSquare, AlignLeft, GitBranch, Clock } from "lucide-react";
+import { Folder, MessageSquare, AlignLeft, GitBranch, Clock, BarChart2, List, BookOpen } from "lucide-react";
+import type { AppMode } from "@/lib/types";
 
-type TabId = "files" | "comments" | "outline" | "source" | "history";
+type WritingTabId = "files" | "comments" | "outline" | "source" | "history";
+type ReviewTabId = "review-agents" | "review-findings" | "review-benchmarks";
+export type TabId = WritingTabId | ReviewTabId;
 
 interface Props {
   tab: TabId;
@@ -12,9 +15,10 @@ interface Props {
   setSidebarOpen: (open: boolean) => void;
   unreadComments: number;
   uncommittedCount: number;
+  appMode?: AppMode;
 }
 
-const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
+const WRITING_TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: "files", label: "Files", Icon: Folder },
   { id: "comments", label: "Comments", Icon: MessageSquare },
   { id: "outline", label: "Outline", Icon: AlignLeft },
@@ -22,8 +26,16 @@ const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: "history", label: "History", Icon: Clock },
 ];
 
-export default function ActivityBar({ tab, setTab, sidebarOpen, setSidebarOpen, unreadComments, uncommittedCount }: Props) {
+const REVIEW_TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
+  { id: "review-agents", label: "Agents", Icon: BarChart2 },
+  { id: "review-findings", label: "Findings", Icon: List },
+  { id: "review-benchmarks", label: "Benchmarks", Icon: BookOpen },
+];
+
+export default function ActivityBar({ tab, setTab, sidebarOpen, setSidebarOpen, unreadComments, uncommittedCount, appMode }: Props) {
   const [hovered, setHovered] = useState<TabId | null>(null);
+  const TABS = appMode === "review" ? REVIEW_TABS : WRITING_TABS;
+  const accentVar = appMode === "review" ? "var(--accent-3)" : "var(--accent)";
 
   return (
     <div
@@ -40,7 +52,7 @@ export default function ActivityBar({ tab, setTab, sidebarOpen, setSidebarOpen, 
     >
       {TABS.map(({ id, label, Icon }) => {
         const isActive = tab === id && sidebarOpen;
-        const badge =
+        const badge = appMode === "review" ? 0 :
           id === "comments" && unreadComments > 0 ? unreadComments :
           id === "source" && uncommittedCount > 0 ? uncommittedCount : 0;
         return (
@@ -67,11 +79,11 @@ export default function ActivityBar({ tab, setTab, sidebarOpen, setSidebarOpen, 
               display: "grid",
               placeItems: "center",
               background: isActive
-                ? "color-mix(in oklab, var(--accent) 12%, transparent)"
+                ? `color-mix(in oklab, ${accentVar} 12%, transparent)`
                 : hovered === id
                 ? "color-mix(in oklab, var(--ink) 6%, transparent)"
                 : "transparent",
-              color: isActive ? "var(--accent)" : "var(--ink-3)",
+              color: isActive ? accentVar : "var(--ink-3)",
               transition: "background .12s, color .12s",
             }}
           >
@@ -83,7 +95,7 @@ export default function ActivityBar({ tab, setTab, sidebarOpen, setSidebarOpen, 
                   top: 6,
                   bottom: 6,
                   width: 2.5,
-                  background: "var(--accent)",
+                  background: accentVar,
                   borderRadius: 2,
                 }}
               />

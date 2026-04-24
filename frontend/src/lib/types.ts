@@ -138,6 +138,79 @@ export interface AgentResponse {
   compilation: CompilationResult | null;
 }
 
+// ─── Review Mode ───────────────────────────────────────────────────────────────
+
+export type AppMode = "writing" | "review";
+export type ReviewPhase = "setup" | "running" | "done";
+
+export interface ReviewFinding {
+  id: string;
+  agent: "novelty" | "soundness" | "rigor" | "clarity";
+  severity: "critical" | "major" | "minor" | "nit";
+  title: string;
+  section: string;
+  line: number | null;
+  body: string;
+  fix: string;
+  relatedBenchmarks: string[];
+  confidence: number;
+}
+
+export interface DimensionScore {
+  score: number;
+  of: number;
+  label: string;
+}
+
+export interface MetaRecommendation {
+  verdict: string;
+  confidence: number;
+  overall: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  actionPlan: { label: string; items: string[] }[];
+}
+
+export interface BenchmarkPaper {
+  id: string;
+  title: string;
+  authors: string;
+  venue: string;
+  year: number;
+  citations: number;
+  similarity: number;
+  tags: string[];
+}
+
+export interface ReviewVenue {
+  id: string;
+  name: string;
+  track: string;
+  pages: number | string;
+  deadline: string;
+  color: string;
+}
+
+export interface VenueSearchResult {
+  sourceid: string;
+  title: string;
+  type: string;
+  sjr: number | null;
+  sjr_quartile: string | null;
+  h_index: number | null;
+  country: string | null;
+  publisher: string | null;
+}
+
+export interface ReviewConfig {
+  venue: string;
+  topic: string;
+  mode: "speed" | "depth" | "novelty" | "rebuttal";
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+
 export type WSMessage =
   | { type: "agent_thinking"; content: string }
   | { type: "agent_message_delta"; content: string }

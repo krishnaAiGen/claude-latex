@@ -7,6 +7,13 @@ import type {
   FileNode,
   PresenceUser,
   SelectionContext,
+  AppMode,
+  ReviewPhase,
+  ReviewFinding,
+  DimensionScore,
+  MetaRecommendation,
+  BenchmarkPaper,
+  ReviewConfig,
 } from "@/lib/types";
 
 interface AuthUser {
@@ -85,9 +92,34 @@ interface EditorStore {
   setShowShareModal: (show: boolean) => void;
   setShowPushModal: (show: boolean) => void;
 
+  // App mode (writing vs review)
+  appMode: AppMode;
+  setAppMode: (mode: AppMode) => void;
+
+  // AI Review pipeline state
+  reviewPhase: ReviewPhase;
+  reviewConfig: ReviewConfig | null;
+  reviewFindings: ReviewFinding[];
+  reviewDimensionScores: Record<string, DimensionScore>;
+  reviewMetaRecommendation: MetaRecommendation | null;
+  reviewBenchmarkPapers: BenchmarkPaper[];
+  activeReviewFinding: string | null;
+  reviewOutputTab: "meta" | "sections" | "benchmark";
+  setReviewConfig: (config: ReviewConfig) => void;
+  startReviewRun: (config: ReviewConfig) => void;
+  setReviewPhase: (phase: ReviewPhase) => void;
+  setReviewResults: (
+    findings: ReviewFinding[],
+    scores: Record<string, DimensionScore>,
+    meta: MetaRecommendation,
+    benchmarks: BenchmarkPaper[]
+  ) => void;
+  setActiveReviewFinding: (id: string | null) => void;
+  setReviewOutputTab: (tab: "meta" | "sections" | "benchmark") => void;
+
   // Left sidebar
-  leftTab: "files" | "comments" | "outline" | "source" | "history";
-  setLeftTab: (tab: "files" | "comments" | "outline" | "source" | "history") => void;
+  leftTab: "files" | "comments" | "outline" | "source" | "history" | "review-agents" | "review-findings" | "review-benchmarks";
+  setLeftTab: (tab: "files" | "comments" | "outline" | "source" | "history" | "review-agents" | "review-findings" | "review-benchmarks") => void;
   setSidebarOpen: (open: boolean) => void;
 
   // Model
@@ -226,6 +258,33 @@ export const useEditorStore = create<EditorStore>((set) => ({
       isAgentProcessing: false,
       compilationStatus: "idle",
     }),
+
+  // App mode
+  appMode: "writing",
+  setAppMode: (mode) => set((state) => ({
+    appMode: mode,
+    // Switch to appropriate sidebar tab when entering review mode
+    leftTab: mode === "review" ? "review-agents" : state.leftTab === "review-agents" || state.leftTab === "review-findings" || state.leftTab === "review-benchmarks" ? "files" : state.leftTab,
+    reviewPhase: mode === "review" ? state.reviewPhase : "setup",
+  })),
+
+  // Review pipeline state
+  reviewPhase: "setup",
+  reviewConfig: null,
+  reviewFindings: [],
+  reviewDimensionScores: {},
+  reviewMetaRecommendation: null,
+  reviewBenchmarkPapers: [],
+  activeReviewFinding: null,
+  reviewOutputTab: "meta",
+
+  setReviewConfig: (config) => set({ reviewConfig: config }),
+  startReviewRun: (config) => set({ reviewConfig: config, reviewPhase: "running" }),
+  setReviewPhase: (phase) => set({ reviewPhase: phase }),
+  setReviewResults: (findings, scores, meta, benchmarks) =>
+    set({ reviewFindings: findings, reviewDimensionScores: scores, reviewMetaRecommendation: meta, reviewBenchmarkPapers: benchmarks, reviewPhase: "done" }),
+  setActiveReviewFinding: (id) => set({ activeReviewFinding: id }),
+  setReviewOutputTab: (tab) => set({ reviewOutputTab: tab }),
 
   // Collaboration
   myRole: null,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import {
   Panel,
@@ -21,6 +21,9 @@ import CommentsPanel from "@/components/CommentsPanel";
 import OutlinePanel from "@/components/OutlinePanel";
 import ActivityBar from "@/components/ActivityBar";
 import SourceControlPanel from "@/components/SourceControlPanel";
+import ReviewModeWrapper from "@/components/review/ReviewModeWrapper";
+import ReviewChat from "@/components/review/ReviewChat";
+import { ReviewAgentsPanel, ReviewFindingsPanel, ReviewBenchmarksPanel } from "@/components/review/ReviewSidebarPanels";
 import { fetchDocument } from "@/lib/api";
 
 // fetch project metadata including role and name
@@ -38,6 +41,7 @@ async function fetchProjectMeta(projectId: string): Promise<{ role: "owner" | "e
 
 export default function EditorPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const projectId = params.projectId as string;
   const {
     sidebarOpen,
@@ -50,6 +54,8 @@ export default function EditorPage() {
     setSidebarOpen,
     comments,
     isDirty,
+    appMode,
+    setAppMode,
   } = useEditorStore();
 
   // Set the current project when page loads
@@ -66,6 +72,13 @@ export default function EditorPage() {
       if (name) setCurrentProjectName(name);
     });
   }, [projectId, setMyRole, setCurrentProjectName]);
+
+  // Auto-switch to review mode if ?mode=review is in the URL
+  useEffect(() => {
+    if (searchParams.get("mode") === "review") {
+      setAppMode("review");
+    }
+  }, [searchParams, setAppMode]);
 
   // Show loader until store is synced with URL param
   if (currentProjectId !== projectId) {
@@ -102,6 +115,7 @@ export default function EditorPage() {
             setSidebarOpen={setSidebarOpen}
             unreadComments={comments.filter((c) => !c.resolved).length}
             uncommittedCount={isDirty ? 1 : 0}
+            appMode={appMode}
           />
           {sidebarOpen && (
             <div
@@ -113,45 +127,59 @@ export default function EditorPage() {
                 overflow: "hidden",
               }}
             >
-              {leftTab === "files"    && <FileSidebar />}
-              {leftTab === "comments" && <CommentsPanel projectId={projectId} />}
-              {leftTab === "outline"  && <OutlinePanel />}
-              {leftTab === "source"   && <SourceControlPanel projectId={projectId} />}
-              {leftTab === "history"  && <HistoryPanel projectId={projectId} />}
+              {/* Writing mode panels */}
+              {appMode !== "review" && leftTab === "files"    && <FileSidebar />}
+              {appMode !== "review" && leftTab === "comments" && <CommentsPanel projectId={projectId} />}
+              {appMode !== "review" && leftTab === "outline"  && <OutlinePanel />}
+              {appMode !== "review" && leftTab === "source"   && <SourceControlPanel projectId={projectId} />}
+              {appMode !== "review" && leftTab === "history"  && <HistoryPanel projectId={projectId} />}
+              {/* Review mode panels */}
+              {appMode === "review" && leftTab === "review-agents"     && <ReviewAgentsPanel />}
+              {appMode === "review" && leftTab === "review-findings"   && <ReviewFindingsPanel />}
+              {appMode === "review" && leftTab === "review-benchmarks" && <ReviewBenchmarksPanel />}
             </div>
           )}
         </aside>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Pull banner */}
-          <PullBanner projectId={projectId} />
-
-          <div className="flex-1 overflow-hidden">
-            <Group orientation="horizontal">
-              <Panel defaultSize={35} minSize={20}>
-                <EditorPanel />
-              </Panel>
-
-              <Separator
-                className="w-1 transition-colors hover:bg-[var(--accent)]"
-                style={{ backgroundColor: "var(--rule)" }}
-              />
-
-              <Panel defaultSize={35} minSize={20}>
-                <PdfPreviewPanel />
-              </Panel>
-
-              <Separator
-                className="w-1 transition-colors hover:bg-[var(--accent)]"
-                style={{ backgroundColor: "var(--rule)" }}
-              />
-
-              <Panel defaultSize={30} minSize={20}>
-                <ChatPanel />
-              </Panel>
-            </Group>
+        {appMode === "review" ? (
+          /* Review layout: ReviewModeWrapper + ReviewChat */
+          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+            <ReviewModeWrapper projectId={projectId} />
+            <div style={{ width: 340, borderLeft: "1px solid var(--rule)", flexShrink: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <ReviewChat />
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Writing layout: Editor + PDF + Chat */
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <PullBanner projectId={projectId} />
+            <div className="flex-1 overflow-hidden">
+              <Group orientation="horizontal">
+                <Panel defaultSize={35} minSize={20}>
+                  <EditorPanel />
+                </Panel>
+
+                <Separator
+                  className="w-1 transition-colors hover:bg-[var(--accent)]"
+                  style={{ backgroundColor: "var(--rule)" }}
+                />
+
+                <Panel defaultSize={35} minSize={20}>
+                  <PdfPreviewPanel />
+                </Panel>
+
+                <Separator
+                  className="w-1 transition-colors hover:bg-[var(--accent)]"
+                  style={{ backgroundColor: "var(--rule)" }}
+                />
+
+                <Panel defaultSize={30} minSize={20}>
+                  <ChatPanel />
+                </Panel>
+              </Group>
+            </div>
+          </div>
+        )}
       </div>
 
       <StatusBar />

@@ -2,6 +2,8 @@ import { getToken } from "@/lib/auth";
 import type {
   FileNode, Project, DocumentDraft, DocumentVersion,
   ProjectMember, Comment, MemberDraft,
+  ReviewConfig, ReviewFinding, DimensionScore, MetaRecommendation, BenchmarkPaper,
+  VenueSearchResult,
 } from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -384,4 +386,78 @@ export async function clearChatMessages(projectId: string) {
     method: "DELETE",
     headers: authHeaders(),
   });
+}
+
+// ─── Review APIs ─────────────────────────────────────────────────────────────
+
+export interface ReviewResult {
+  review_id: string;
+  findings: ReviewFinding[];
+  dimension_scores: Record<string, DimensionScore>;
+  meta: MetaRecommendation;
+  benchmarks: BenchmarkPaper[];
+}
+
+export async function startReview(projectId: string, config: ReviewConfig): Promise<{ review_id: string }> {
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/review`, {
+    method: "POST",
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error("Failed to start review");
+  return res.json();
+}
+
+export async function getReview(projectId: string, reviewId: string): Promise<ReviewResult> {
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/review/${reviewId}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch review");
+  return res.json();
+}
+
+export interface ReviewSummary {
+  id: string;
+  project_id: string;
+  project_name: string;
+  venue: string;
+  topic: string;
+  mode: string;
+  status: string;
+  progress_pct: number;
+  created_at: string;
+  completed_at: string | null;
+  meta_verdict: string | null;
+  meta_overall: number | null;
+}
+
+export async function listReviews(): Promise<ReviewSummary[]> {
+  const res = await fetch(`${API_BASE}/api/reviews`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to list reviews");
+  return res.json();
+}
+
+// ─── Venue Lookup APIs ───────────────────────────────────────────────────────
+
+export async function getVenueAreas(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/api/venues/areas`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch venue areas");
+  return res.json();
+}
+
+export async function getVenueTypes(area: string): Promise<string[]> {
+  const params = new URLSearchParams({ area });
+  const res = await fetch(`${API_BASE}/api/venues/types?${params}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch venue types");
+  return res.json();
+}
+
+export async function searchVenues(area: string, type?: string, q?: string, limit = 50): Promise<VenueSearchResult[]> {
+  const params = new URLSearchParams({ area });
+  if (type) params.set("type", type);
+  if (q) params.set("q", q);
+  params.set("limit", String(limit));
+  const res = await fetch(`${API_BASE}/api/venues/search?${params}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to search venues");
+  return res.json();
 }

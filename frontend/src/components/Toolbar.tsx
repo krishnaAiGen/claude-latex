@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Play, Download, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown, Sparkles, Check } from "lucide-react";
+import { Play, Download, Sun, Moon, PanelLeft, LogOut, LayoutDashboard, Loader2, ChevronDown, Sparkles, Check, FlaskConical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/store/editorStore";
 import { useCompilation } from "@/hooks/useCompilation";
@@ -24,6 +24,7 @@ export default function Toolbar() {
     toggleSidebar, sidebarOpen, user, logout, currentProjectId, currentProjectName,
     selectedModel, setSelectedModel, isAgentProcessing,
     myRole, showPushModal, setShowPushModal, showShareModal, setShowShareModal,
+    appMode, setAppMode, setReviewPhase,
   } = useEditorStore();
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -96,7 +97,40 @@ export default function Toolbar() {
           </span>
         </div>
 
-        {isDirty && (
+        <div className="w-px h-4 mx-1" style={{ background: "var(--rule)" }} />
+
+        {/* Writing / Review mode toggle */}
+        <div style={{ display: "flex", border: "1px solid var(--rule)", borderRadius: 8, overflow: "hidden", padding: 2, gap: 2, background: "var(--bg)" }}>
+          <button
+            onClick={() => setAppMode("writing")}
+            style={{
+              padding: "3px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600,
+              background: appMode !== "review" ? "var(--bg-2)" : "transparent",
+              color: appMode !== "review" ? "var(--ink)" : "var(--ink-3)",
+              boxShadow: appMode !== "review" ? "0 1px 2px rgba(0,0,0,.06)" : "none",
+              transition: "all .12s",
+            }}
+          >
+            Writing
+          </button>
+          <button
+            onClick={() => setAppMode("review")}
+            style={{
+              padding: "3px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5,
+              background: appMode === "review" ? "color-mix(in oklab, var(--accent-3) 15%, var(--bg-2))" : "transparent",
+              color: appMode === "review" ? "var(--accent-3)" : "var(--ink-3)",
+              boxShadow: appMode === "review" ? "0 1px 2px rgba(0,0,0,.06)" : "none",
+              transition: "all .12s",
+            }}
+          >
+            <FlaskConical size={12} />
+            Review
+          </button>
+        </div>
+
+        {isDirty && appMode !== "review" && (
           <span className="chip" style={{ color: "var(--warn)", borderColor: "color-mix(in oklab, var(--warn) 30%, var(--rule))" }}>
             unsaved
           </span>
@@ -207,8 +241,8 @@ export default function Toolbar() {
           )}
         </button>
 
-        {/* Compile / Stop */}
-        {isCompiling ? (
+        {/* Compile / Stop (writing mode only) */}
+        {appMode !== "review" && (isCompiling ? (
           <button onClick={stopCompile} className="btn sm" style={{ background: "var(--err)", color: "white", borderColor: "var(--err)" }}>
             <Loader2 size={13} className="animate-spin" />
             Stop
@@ -218,17 +252,30 @@ export default function Toolbar() {
             <Play size={13} />
             Compile
           </button>
+        ))}
+
+        {appMode !== "review" && (
+          <a
+            href={currentProjectId ? getPdfUrl(currentProjectId) : "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn ghost sm"
+          >
+            <Download size={13} />
+            PDF
+          </a>
         )}
 
-        <a
-          href={currentProjectId ? getPdfUrl(currentProjectId) : "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn ghost sm"
-        >
-          <Download size={13} />
-          PDF
-        </a>
+        {appMode === "review" && (
+          <button
+            className="btn sm"
+            onClick={() => setReviewPhase("setup")}
+            style={{ background: "var(--accent-3)", color: "white", borderColor: "var(--accent-3)", gap: 5 }}
+          >
+            <FlaskConical size={13} />
+            New Review
+          </button>
+        )}
 
         {/* User info + logout */}
         {user && (
